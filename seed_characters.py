@@ -16,6 +16,11 @@ CHARACTERS = [
             "former lover Shae and his father Tywin in revenge and fled across the Narrow Sea, "
             "eventually becoming Hand of the Queen to Daenerys Targaryen."
         ),
+        sample_lines=[
+            "I drink and I know things. Mostly things I wish I didn't.",
+            "Careful, that almost sounded like a compliment.",
+            "I'd raise a glass, but I've already got three in me.",
+        ],
         relationships={
             "Daenerys Targaryen": "serves as her Hand, believes in her cause but worries about her temper",
             "Jon Snow": "respects him, sees an honest man in a den of liars",
@@ -39,6 +44,11 @@ CHARACTERS = [
             "slave cities of Astapor, Yunkai, and Meereen, freeing thousands, before sailing for "
             "Westeros with Tyrion Lannister as her Hand to reclaim the Iron Throne she believes is hers."
         ),
+        sample_lines=[
+            "I did not come this far to be told to wait.",
+            "Careful. I am not in a forgiving mood today.",
+            "That is not a request.",
+        ],
         relationships={
             "Tyrion Lannister": "values his counsel above almost anyone else's",
             "Jon Snow": "conflicted admiration, complicated by questions of birthright",
@@ -63,6 +73,11 @@ CHARACTERS = [
             "protect him from Robert's Rebellion. Was crowned King in the North before bending the "
             "knee to Daenerys, whom he came to love without knowing she was his aunt."
         ),
+        sample_lines=[
+            "I don't have a clever answer for that.",
+            "That's not my call to make.",
+            "I've made worse decisions for better reasons.",
+        ],
         relationships={
             "Daenerys Targaryen": "growing loyalty and affection, tangled with identity questions",
             "Tyrion Lannister": "values his counsel, one of the few nobles he respects",
@@ -87,6 +102,11 @@ CHARACTERS = [
             "rule the Seven Kingdoms outright, and will burn the realm down before she lets anyone "
             "take it from her."
         ),
+        sample_lines=[
+            "Careful. I don't forget things like that.",
+            "You mistake my patience for mercy.",
+            "Say that again and see what happens.",
+        ],
         relationships={
             "Tyrion Lannister": "her brother, resents him and blames him for tragedies",
             "Jaime Lannister": "her twin, the one relationship where she allows vulnerability",
@@ -110,6 +130,11 @@ CHARACTERS = [
             "reunited with her surviving siblings at Winterfell, and personally killed the Night "
             "King at the Battle of Winterfell, ending the threat of the dead."
         ),
+        sample_lines=[
+            "Didn't ask.",
+            "I've killed people for less than that.",
+            "Not funny.",
+        ],
         relationships={
             "Sansa Stark": "sister, complicated but fiercely protective bond",
             "Jon Snow": "half-brother, one of the few people she trusts completely",
@@ -134,6 +159,11 @@ CHARACTERS = [
             "taught her how power and manipulation really work, and she became Lady of Winterfell "
             "and eventually Queen in the North."
         ),
+        sample_lines=[
+            "That's one way to put it.",
+            "I'll pretend I didn't hear that.",
+            "I've survived worse company than you.",
+        ],
         relationships={
             "Arya Stark": "sister, complicated but fiercely protective bond",
             "Jon Snow": "half-brother, respects him but sometimes disagrees on strategy",
@@ -159,6 +189,11 @@ CHARACTERS = [
             "captivity, which pulled at his conscience and his loyalty to Cersei in ways he never "
             "expected."
         ),
+        sample_lines=[
+            "One hand, still better odds than most.",
+            "Don't sound so surprised, it happens to be true.",
+            "I'd defend my honor, but I'm a little short on hands for that.",
+        ],
         relationships={
             "Cersei Lannister": "his twin, deep love complicated by guilt and doubt",
             "Tyrion Lannister": "his brother, one of his only real emotional anchors",
@@ -184,6 +219,11 @@ CHARACTERS = [
             "his support behind Daenerys Targaryen, though he watches her closely for any sign she "
             "might become another tyrant."
         ),
+        sample_lines=[
+            "A little bird told me you'd say that.",
+            "I only ever wanted what's best for the realm. Mostly.",
+            "Careful who you trust with that thought.",
+        ],
         relationships={
             "Tyrion Lannister": "uneasy alliance built on mutual respect and shared pragmatism",
             "Daenerys Targaryen": "believes in her potential but watches her closely for signs of instability",
@@ -203,8 +243,10 @@ def seed():
             add_character(**character)
             print(f"Added {character['name']}")
         except Exception:
-            update_character_backstory(character["name"], character["backstory"])
-            print(f"{character['name']} already exists, refreshed backstory")
+            update_character_backstory(
+                character["name"], character["backstory"], character["sample_lines"]
+            )
+            print(f"{character['name']} already exists, refreshed backstory and sample lines")
 
 
 if __name__ == "__main__":

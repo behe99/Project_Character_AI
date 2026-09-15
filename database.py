@@ -22,6 +22,7 @@ def init_db():
             personality TEXT NOT NULL,
             speech_style TEXT NOT NULL,
             backstory TEXT DEFAULT '',
+            sample_lines TEXT DEFAULT '[]',
             relationships TEXT DEFAULT '{}',
             triggers TEXT DEFAULT '[]',
             interrupt_tendency TEXT DEFAULT 'medium',
@@ -29,11 +30,13 @@ def init_db():
         )
     """)
 
-    # Migration: older databases were created before the backstory column existed.
+    # Migrations: older databases predate these columns.
     cursor.execute("PRAGMA table_info(characters)")
     existing_columns = {row[1] for row in cursor.fetchall()}
     if "backstory" not in existing_columns:
         cursor.execute("ALTER TABLE characters ADD COLUMN backstory TEXT DEFAULT ''")
+    if "sample_lines" not in existing_columns:
+        cursor.execute("ALTER TABLE characters ADD COLUMN sample_lines TEXT DEFAULT '[]'")
 
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS sessions (
@@ -59,17 +62,19 @@ def init_db():
     print("Database initialized successfully.")
 
 
-def add_character(name, personality, speech_style, backstory="", relationships=None,
-                   triggers=None, interrupt_tendency="medium", assertiveness="medium"):
+def add_character(name, personality, speech_style, backstory="", sample_lines=None,
+                   relationships=None, triggers=None, interrupt_tendency="medium",
+                   assertiveness="medium"):
     conn = get_connection()
     try:
         cursor = conn.cursor()
         cursor.execute(
             """INSERT INTO characters
-               (name, personality, speech_style, backstory, relationships, triggers, interrupt_tendency, assertiveness)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
-            (name, personality, speech_style, backstory, json.dumps(relationships or {}),
-             json.dumps(triggers or []), interrupt_tendency, assertiveness)
+               (name, personality, speech_style, backstory, sample_lines, relationships, triggers, interrupt_tendency, assertiveness)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            (name, personality, speech_style, backstory, json.dumps(sample_lines or []),
+             json.dumps(relationships or {}), json.dumps(triggers or []),
+             interrupt_tendency, assertiveness)
         )
         conn.commit()
     except Exception:
@@ -79,14 +84,20 @@ def add_character(name, personality, speech_style, backstory="", relationships=N
         conn.close()
 
 
-def update_character_backstory(name, backstory):
+def update_character_backstory(name, backstory, sample_lines=None):
     conn = get_connection()
     try:
         cursor = conn.cursor()
-        cursor.execute(
-            "UPDATE characters SET backstory = ? WHERE name = ?",
-            (backstory, name)
-        )
+        if sample_lines is None:
+            cursor.execute(
+                "UPDATE characters SET backstory = ? WHERE name = ?",
+                (backstory, name)
+            )
+        else:
+            cursor.execute(
+                "UPDATE characters SET backstory = ?, sample_lines = ? WHERE name = ?",
+                (backstory, json.dumps(sample_lines), name)
+            )
         conn.commit()
     except Exception:
         conn.rollback()
