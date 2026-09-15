@@ -62,6 +62,11 @@ real reason to - a direct challenge, a contradiction, something aimed at someone
 specifically - not just because the topic is still technically on the table. Most
 back-and-forths should end after one or two exchanges, not run on.
 
+DON'T DEFAULT TO THE SAME ONE OR TWO CHARACTERS OUT OF HABIT. Look at the recent
+conversation - if the same pair has been trading lines for several messages in a row,
+that's a sign to either let it end or bring in someone else with a genuine reason to
+speak, not to keep it going between the same two people again.
+
 Choose AT MOST 2 characters. It's okay, and often correct, to choose 0.
 
 Respond with ONLY valid JSON in this exact format, no other text:
