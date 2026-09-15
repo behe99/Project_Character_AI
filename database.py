@@ -55,16 +55,18 @@ def init_db():
 def add_character(name, personality, speech_style, relationships=None,
                    triggers=None, interrupt_tendency="medium", assertiveness="medium"):
     conn = get_connection()
-    cursor = conn.cursor()
-    cursor.execute(
-        """INSERT INTO characters 
-           (name, personality, speech_style, relationships, triggers, interrupt_tendency, assertiveness) 
-           VALUES (?, ?, ?, ?, ?, ?, ?)""",
-        (name, personality, speech_style, json.dumps(relationships or {}),
-         json.dumps(triggers or []), interrupt_tendency, assertiveness)
-    )
-    conn.commit()
-    conn.close()
+    try:
+        cursor = conn.cursor()
+        cursor.execute(
+            """INSERT INTO characters
+               (name, personality, speech_style, relationships, triggers, interrupt_tendency, assertiveness)
+               VALUES (?, ?, ?, ?, ?, ?, ?)""",
+            (name, personality, speech_style, json.dumps(relationships or {}),
+             json.dumps(triggers or []), interrupt_tendency, assertiveness)
+        )
+        conn.commit()
+    finally:
+        conn.close()
 
 
 def get_all_characters():
@@ -78,26 +80,29 @@ def get_all_characters():
 
 def create_session(name):
     conn = get_connection()
-    cursor = conn.cursor()
-    cursor.execute(
-        "INSERT INTO sessions (name, created_at) VALUES (?, ?)",
-        (name, datetime.now().isoformat())
-    )
-    conn.commit()
-    session_id = cursor.lastrowid
-    conn.close()
-    return session_id
+    try:
+        cursor = conn.cursor()
+        cursor.execute(
+            "INSERT INTO sessions (name, created_at) VALUES (?, ?)",
+            (name, datetime.now().isoformat())
+        )
+        conn.commit()
+        return cursor.lastrowid
+    finally:
+        conn.close()
 
 
 def add_message(session_id, sender, content):
     conn = get_connection()
-    cursor = conn.cursor()
-    cursor.execute(
-        "INSERT INTO messages (session_id, sender, content, timestamp) VALUES (?, ?, ?, ?)",
-        (session_id, sender, content, datetime.now().isoformat())
-    )
-    conn.commit()
-    conn.close()
+    try:
+        cursor = conn.cursor()
+        cursor.execute(
+            "INSERT INTO messages (session_id, sender, content, timestamp) VALUES (?, ?, ?, ?)",
+            (session_id, sender, content, datetime.now().isoformat())
+        )
+        conn.commit()
+    finally:
+        conn.close()
 
 
 def get_messages(session_id):

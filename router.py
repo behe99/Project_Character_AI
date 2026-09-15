@@ -1,14 +1,6 @@
-import os
 import json
-import time
-from dotenv import load_dotenv
-from google import genai
 from database import get_all_characters, get_messages
-
-load_dotenv()
-client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
-
-MODEL = "gemini-3.1-flash-lite"
+from llm import call_model
 
 
 def build_character_summary(characters):
@@ -62,23 +54,7 @@ Respond with ONLY valid JSON in this exact format, no other text:
 {{"speakers": ["Character Name", "Character Name"]}}
 """
 
-    response = None
-    for attempt in range(3):
-        try:
-            response = client.models.generate_content(
-                model=MODEL,
-                contents=prompt
-            )
-            break
-        except Exception as e:
-            print(f"Attempt {attempt + 1} failed: {e}")
-            if attempt < 2:
-                time.sleep(3)
-
-    if response is None:
-        raise RuntimeError(f"{MODEL} failed after 3 attempts.")
-
-    raw = response.text.strip()
+    raw = call_model(prompt)
     if raw.startswith("```"):
         raw = raw.strip("`").replace("json", "", 1).strip()
 

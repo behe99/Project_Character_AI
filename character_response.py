@@ -1,14 +1,6 @@
-﻿import os
 import json
-import time
-from dotenv import load_dotenv
-from google import genai
 from database import get_all_characters, get_messages, add_message
-
-load_dotenv()
-client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
-
-MODEL = "gemini-3.1-flash-lite"
+from llm import call_model
 
 
 def get_character(name):
@@ -20,6 +12,7 @@ def get_character(name):
 
 
 def build_transcript(messages, limit=15):
+    """Takes the last N messages and formats them as readable dialogue."""
     recent = messages[-limit:]
     lines = [f"{m['sender']}: {m['content']}" for m in recent]
     return "\n".join(lines)
@@ -57,28 +50,16 @@ Keep it to 1-4 sentences, like a real chat message, not a speech.
 Do NOT include the character's name as a prefix (e.g. don't write "Tyrion: ..."), just write the message itself.
 """
 
-    response = None
-    for attempt in range(3):
-        try:
-            response = client.models.generate_content(
-                model=MODEL,
-                contents=prompt
-            )
-            break
-        except Exception as e:
-            print(f"Attempt {attempt + 1} failed: {e}")
-            if attempt < 2:
-                time.sleep(3)
+    reply_text = call_model(prompt)
 
-    if response is None:
-        raise RuntimeError(f"{MODEL} failed after 3 attempts.")
-
-    reply_text = response.text.strip()
+    # Save this character's reply into the transcript
     add_message(session_id, character["name"], reply_text)
+
     return reply_text
 
 
 def generate_replies_for_speakers(session_id, speaker_names):
+    """Generates replies sequentially so each character sees prior replies in the same turn."""
     replies = []
     for name in speaker_names:
         reply = generate_character_reply(session_id, name)
