@@ -65,6 +65,12 @@ Respond with ONLY valid JSON in this exact format, no other text:
         print("Router returned invalid JSON:", raw)
         return []
 
+    valid_names = {c["name"] for c in characters}
+    dropped = [name for name in speakers if name not in valid_names]
+    if dropped:
+        print("Router picked unknown character(s), ignoring:", dropped)
+    speakers = [name for name in speakers if name in valid_names]
+
     if exclude:
         speakers = [name for name in speakers if name != exclude]
 

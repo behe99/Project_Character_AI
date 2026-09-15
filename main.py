@@ -43,8 +43,8 @@ def main():
 
         try:
             run_conversation_turn(session_id, user_message)
-        except RuntimeError as e:
-            print(f"(the model is unavailable right now, try again: {e})")
+        except (RuntimeError, ValueError) as e:
+            print(f"(something went wrong generating a reply, try again: {e})")
 
 
 if __name__ == "__main__":
