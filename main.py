@@ -41,7 +41,10 @@ def main():
         if user_message.lower() in ("quit", "exit"):
             break
 
-        run_conversation_turn(session_id, user_message)
+        try:
+            run_conversation_turn(session_id, user_message)
+        except RuntimeError as e:
+            print(f"(the model is unavailable right now, try again: {e})")
 
 
 if __name__ == "__main__":

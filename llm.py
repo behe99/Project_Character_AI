@@ -2,11 +2,18 @@ import os
 import time
 from dotenv import load_dotenv
 from google import genai
+from google.genai import types
 
 load_dotenv()
 client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
 
 MODEL = "gemini-3.1-flash-lite"
+
+# We never use tool/function calling, so disable automatic function calling
+# to silence the SDK's AFC warning on every call.
+GENERATE_CONFIG = types.GenerateContentConfig(
+    automatic_function_calling=types.AutomaticFunctionCallingConfig(disable=True)
+)
 
 
 def call_model(prompt, retries=3, backoff_seconds=3):
@@ -16,7 +23,8 @@ def call_model(prompt, retries=3, backoff_seconds=3):
         try:
             response = client.models.generate_content(
                 model=MODEL,
-                contents=prompt
+                contents=prompt,
+                config=GENERATE_CONFIG,
             )
             break
         except Exception as e:
