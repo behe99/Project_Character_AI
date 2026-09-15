@@ -24,7 +24,7 @@ def build_transcript(messages, limit=10):
     return "\n".join(lines)
 
 
-def decide_speakers(session_id, latest_message):
+def decide_speakers(session_id, latest_message, exclude=None):
     characters = get_all_characters()
     messages = get_messages(session_id)
 
@@ -60,10 +60,15 @@ Respond with ONLY valid JSON in this exact format, no other text:
 
     try:
         result = json.loads(raw)
-        return result.get("speakers", [])
+        speakers = result.get("speakers", [])
     except json.JSONDecodeError:
         print("Router returned invalid JSON:", raw)
         return []
+
+    if exclude:
+        speakers = [name for name in speakers if name != exclude]
+
+    return speakers
 
 
 if __name__ == "__main__":
