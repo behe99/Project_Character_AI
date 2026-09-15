@@ -48,7 +48,15 @@ Decide which character(s), if any, would naturally respond to the latest message
 - Whether the message is directed at them specifically
 - Natural conversation flow (don't have everyone respond to everything)
 
-Choose AT MOST 2 characters. It's okay to choose 0 if nothing warrants a response.
+Be conservative. Real group chats have quiet moments - not every message gets a reply,
+and most that do only get one. A plain greeting or small talk ("hi", "how's it going")
+should usually get 0 responses, or at most 1 brief one. If the latest message is itself
+a character's reply (not the human user's), only continue the exchange when there's a
+real reason to - a direct challenge, a contradiction, something aimed at someone
+specifically - not just because the topic is still technically on the table. Most
+back-and-forths should end after one or two exchanges, not run on.
+
+Choose AT MOST 2 characters. It's okay, and often correct, to choose 0.
 
 Respond with ONLY valid JSON in this exact format, no other text:
 {{"speakers": ["Character Name", "Character Name"]}}

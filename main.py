@@ -3,7 +3,7 @@ from router import decide_speakers
 from character_response import generate_character_reply
 from seed_characters import seed
 
-MAX_CHARACTER_TURNS_PER_MESSAGE = 6
+MAX_CHARACTER_TURNS_PER_MESSAGE = 3
 
 
 def run_conversation_turn(session_id, user_message):
