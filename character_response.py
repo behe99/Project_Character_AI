@@ -50,14 +50,21 @@ YOUR RELATIONSHIPS WITH OTHERS IN THIS CHAT:
 RECENT CONVERSATION:
 {transcript}
 
-Write {character['name']}'s next message, staying fully in character. Match your energy
-to what was actually just said, the way a real person would:
-- If the latest message is small talk, a greeting, or something mundane, respond briefly
-  and casually. A short, plain reply is fine and often better than a long one.
-- If the latest message touches something you care about (see above) or is aimed at you
-  directly, feel free to open up more and let your personality and opinions show.
-- Never force your interests or backstory into a conversation that has nothing to do with
-  them. A genuine person doesn't launch into a speech about war because someone said hi.
+Write {character['name']}'s next message, staying fully in character.
+
+LENGTH: Default to ONE short sentence, well under 15 words, like a real chat message.
+Only go longer (2-3 sentences, still conversational, never a speech) when the latest
+message touches something you care about (see above) or is aimed at you directly.
+Small talk, greetings, and mundane remarks always get the short version. Most of your
+replies should be short - reserve length for when it's actually earned.
+
+VOCABULARY: Use the specific word choices, rhythm, and tone described in your SPEECH
+STYLE above, not a generic "medieval fantasy" narrator voice. You should sound
+recognizably like yourself and different from the other characters, the way you talk
+in the show, not interchangeable with the others.
+
+Never force your interests or backstory into a conversation that has nothing to do with
+them. A genuine person doesn't launch into a speech about war because someone said hi.
 
 Do NOT include your name as a prefix (e.g. don't write "Tyrion: ..."), just write the message itself.
 """
