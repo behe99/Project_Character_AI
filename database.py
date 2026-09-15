@@ -21,12 +21,19 @@ def init_db():
             name TEXT NOT NULL UNIQUE,
             personality TEXT NOT NULL,
             speech_style TEXT NOT NULL,
+            backstory TEXT DEFAULT '',
             relationships TEXT DEFAULT '{}',
             triggers TEXT DEFAULT '[]',
             interrupt_tendency TEXT DEFAULT 'medium',
             assertiveness TEXT DEFAULT 'medium'
         )
     """)
+
+    # Migration: older databases were created before the backstory column existed.
+    cursor.execute("PRAGMA table_info(characters)")
+    existing_columns = {row[1] for row in cursor.fetchall()}
+    if "backstory" not in existing_columns:
+        cursor.execute("ALTER TABLE characters ADD COLUMN backstory TEXT DEFAULT ''")
 
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS sessions (
@@ -52,19 +59,38 @@ def init_db():
     print("Database initialized successfully.")
 
 
-def add_character(name, personality, speech_style, relationships=None,
+def add_character(name, personality, speech_style, backstory="", relationships=None,
                    triggers=None, interrupt_tendency="medium", assertiveness="medium"):
     conn = get_connection()
     try:
         cursor = conn.cursor()
         cursor.execute(
             """INSERT INTO characters
-               (name, personality, speech_style, relationships, triggers, interrupt_tendency, assertiveness)
-               VALUES (?, ?, ?, ?, ?, ?, ?)""",
-            (name, personality, speech_style, json.dumps(relationships or {}),
+               (name, personality, speech_style, backstory, relationships, triggers, interrupt_tendency, assertiveness)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+            (name, personality, speech_style, backstory, json.dumps(relationships or {}),
              json.dumps(triggers or []), interrupt_tendency, assertiveness)
         )
         conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+
+
+def update_character_backstory(name, backstory):
+    conn = get_connection()
+    try:
+        cursor = conn.cursor()
+        cursor.execute(
+            "UPDATE characters SET backstory = ? WHERE name = ?",
+            (backstory, name)
+        )
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
     finally:
         conn.close()
 
@@ -88,6 +114,9 @@ def create_session(name):
         )
         conn.commit()
         return cursor.lastrowid
+    except Exception:
+        conn.rollback()
+        raise
     finally:
         conn.close()
 
@@ -101,6 +130,9 @@ def add_message(session_id, sender, content):
             (session_id, sender, content, datetime.now().isoformat())
         )
         conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
     finally:
         conn.close()
 

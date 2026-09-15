@@ -1,3 +1,5 @@
+import random
+
 from database import init_db, create_session, add_message, get_all_characters
 from router import decide_speakers
 from character_response import generate_character_reply
@@ -8,17 +10,25 @@ MAX_CHARACTER_TURNS_PER_MESSAGE = 3
 
 def run_conversation_turn(session_id, user_message):
     """Lets characters react to the user, then to each other, for a few rounds
-    before handing control back to the user."""
+    before handing control back to the user. The user's own message always gets
+    at least one reply; character-to-character chains can still end at 0."""
     add_message(session_id, "user", user_message)
 
     latest_message = user_message
     last_speaker = None
     turns_used = 0
+    is_first_round = True
 
     while turns_used < MAX_CHARACTER_TURNS_PER_MESSAGE:
         speakers = decide_speakers(session_id, latest_message, exclude=last_speaker)
+
         if not speakers:
-            break
+            if not is_first_round:
+                break
+            fallback_pool = [
+                c["name"] for c in get_all_characters() if c["name"] != last_speaker
+            ]
+            speakers = [random.choice(fallback_pool)]
 
         for name in speakers:
             if turns_used >= MAX_CHARACTER_TURNS_PER_MESSAGE:
@@ -28,6 +38,8 @@ def run_conversation_turn(session_id, user_message):
             latest_message = reply
             last_speaker = name
             turns_used += 1
+
+        is_first_round = False
 
 
 def main():
