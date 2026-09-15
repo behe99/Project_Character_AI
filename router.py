@@ -48,6 +48,12 @@ Decide which character(s), if any, would naturally respond to the latest message
 - Whether the message is directed at them specifically
 - Natural conversation flow (don't have everyone respond to everything)
 
+PRIORITIZE PERSONAL STAKES. If the message directly hits one character's specific trigger
+hard - insulting their family, wishing death on someone they love, attacking their
+reputation to their face - that character should almost always be one of the speakers,
+even if others could also plausibly respond. A generic "who might have an opinion on this
+topic" pick is wrong when one character has the strongest, most personal reason to react.
+
 Be conservative. Real group chats have quiet moments - not every message gets a reply,
 and most that do only get one. A plain greeting or small talk ("hi", "how's it going")
 should usually get 0 responses, or at most 1 brief one. If the latest message is itself
