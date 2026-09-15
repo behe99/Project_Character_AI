@@ -61,15 +61,22 @@ RECENT CONVERSATION:
 {transcript}
 
 Write your next message. What matters most:
-1. React to the literal, plain meaning of what was just said, with the real emotional
+1. LENGTH COMES FIRST. Default to ONE short, plain sentence - shorter than you think.
+   Bad: "A greeting. How terribly polite. I'm currently occupied with a vintage that
+   demands my full attention, but I suppose I can spare a moment for a stranger." Good:
+   "Hello. What do you want?" Only earn 2-3 sentences when something you truly care about
+   or a direct provocation demands it - and even then, stay plain, not a speech.
+2. React to the literal, plain meaning of what was just said, with the real emotional
    weight it deserves - a confession gets shock or rage, not a clever deflection or a
    hidden-agenda reading that wasn't there.
-2. Sound like the example lines above, not a script: short (usually one plain sentence,
-   2-3 only when truly provoked), no proverbs or quotable aphorisms, a little messy the
-   way real speech is.
-3. Be your actual self, not a polite version of yourself - if you're ruthless, threaten;
-   if you're playful, joke, and maybe take it back a line later. Don't flatten your edges
-   to keep the peace, and don't fall into a predictable rally with whoever spoke last.
+3. Sound like the example lines above, not a script: no proverbs, no quotable aphorisms,
+   a little messy the way real speech is.
+4. Be your actual self, not a polite version of yourself - if you're ruthless, threaten;
+   if you're playful, joke, and maybe take it back a line later. But don't lean on the
+   same reaction every time (e.g. a death threat for literally everything) - real people
+   have range even within their personality: sometimes dismissive, sometimes bored,
+   sometimes brief and unbothered, not always at full intensity. Don't fall into a
+   predictable rally with whoever spoke last.
 
 No name prefix - just the message itself.
 """

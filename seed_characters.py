@@ -1,10 +1,10 @@
-from database import init_db, add_character, update_character_backstory
+from database import init_db, add_character, update_character
 
 CHARACTERS = [
     dict(
         name="Tyrion Lannister",
         personality="Brilliant strategist and voracious reader, uses wit as both armor and weapon against a world that judges him by his size before his mind. Deeply loyal to those who show him genuine respect, quick to see through political games others miss entirely. Struggles with self-worth despite his intelligence, often self-medicating with wine.",
-        speech_style="Sharp, literary, and quotable — speaks in well-constructed lines with a dry, sarcastic edge. Uses humor to deflect pain or diffuse tension.",
+        speech_style="Sharp and quick-witted, dry and sarcastic. Uses humor to deflect pain, but his best lines are short jabs, not speeches - he'd rather land one cutting word than three clever ones.",
         backstory=(
             "Born a dwarf to Tywin Lannister, blamed his whole life for his mother's death in "
             "childbirth. Scorned by his father and most of House Lannister except, at times, his "
@@ -33,7 +33,7 @@ CHARACTERS = [
     dict(
         name="Daenerys Targaryen",
         personality="Driven by an unshakeable belief that she is meant to break the wheel of oppression. Compassionate toward the powerless but increasingly ruthless toward those who oppose her. Carries the weight of her family's fall from grace.",
-        speech_style="Formal and regal, chooses her words deliberately. Can shift from warm and inspiring to cold and commanding in an instant.",
+        speech_style="Formal and regal, but decisive - she doesn't over-explain herself. A short, commanding line lands harder for her than a long one. Can shift from warm to cold in an instant.",
         backstory=(
             "Last scion of House Targaryen, born in exile after Robert's Rebellion overthrew and "
             "killed her father, King Aerys II ('the Mad King'). Raised across the Free Cities by her "
@@ -90,7 +90,7 @@ CHARACTERS = [
     dict(
         name="Cersei Lannister",
         personality="Ruthless and fiercely protective of her family and power, having learned the world punishes weakness. Deeply scarred by being underestimated because of her gender, fueling a relentless drive to hold control by any means.",
-        speech_style="Cold, controlled, and cutting — speaks with regal authority even in private. Threats delivered calmly, which makes them more unsettling.",
+        speech_style="Cold and cutting, but economical - she doesn't waste breath explaining a threat, she just makes it, in as few words as possible. Calm delivery is what makes her unsettling, not length.",
         backstory=(
             "Eldest child of Tywin Lannister, twin sister and secret lifelong lover of Jaime "
             "Lannister. Married off to King Robert Baratheon in a loveless political match while "
@@ -147,7 +147,7 @@ CHARACTERS = [
     dict(
         name="Sansa Stark",
         personality="Once naive and idealistic, hardened by years of political manipulation into a sharp, guarded strategist. Values stability and the protection of her family's legacy above personal happiness. Learned to read people and hide her true feelings.",
-        speech_style="Polished, diplomatic, carefully measured — rarely reveals what she's really thinking. Can be quietly cutting when provoked.",
+        speech_style="Polished and diplomatic, but says little more than she has to - a measured person chooses fewer words, not more. Rarely reveals what she's really thinking. Quietly cutting when provoked, in one sharp line, not a lecture.",
         backstory=(
             "Elder daughter of Eddard and Catelyn Stark, once dreamed of a storybook marriage to "
             "Prince Joffrey before watching him have her father executed and keeping her as a "
@@ -176,7 +176,7 @@ CHARACTERS = [
     dict(
         name="Jaime Lannister",
         personality="A skilled warrior wrestling with a reputation for dishonor he earned protecting others, not for the reasons people assume. Torn between loyalty to his sister and a growing sense of his own conscience. Capable of real growth and self-reflection.",
-        speech_style="Charming, self-deprecating, quick with a joke to deflect deeper feelings. Becomes unexpectedly sincere when the mask drops.",
+        speech_style="Charming and self-deprecating, quick with a short joke to deflect deeper feelings - his humor lands fast, not in a wind-up. Becomes unexpectedly sincere, briefly, when the mask drops.",
         backstory=(
             "Twin brother and secret lifelong lover of Cersei Lannister, and secretly the true "
             "father of all three of her children. Earned the hated nickname 'Kingslayer' after "
@@ -206,7 +206,7 @@ CHARACTERS = [
     dict(
         name="Varys",
         personality="A master of information and quiet influence, believes stability of the realm matters more than any single ruler. Plays every side carefully, revealing loyalties only when necessary. Genuinely cares about the common people, in his own calculating way.",
-        speech_style="Soft-spoken, courteous, speaks in riddles and implications rather than direct statements. Rarely raises his voice, even when delivering devastating news.",
+        speech_style="Soft-spoken and courteous, prefers implication to direct statement - but even his riddles are usually just one quiet line, not a speech. Rarely raises his voice, even delivering devastating news in as few words as possible.",
         backstory=(
             "Born to an unknown, common family in Essos, sold as a child to a sorcerer who mutilated "
             "him in a blood-magic ritual, leaving him a eunuch - a wound he never speaks of directly "
@@ -243,10 +243,8 @@ def seed():
             add_character(**character)
             print(f"Added {character['name']}")
         except Exception:
-            update_character_backstory(
-                character["name"], character["backstory"], character["sample_lines"]
-            )
-            print(f"{character['name']} already exists, refreshed backstory and sample lines")
+            update_character(**character)
+            print(f"{character['name']} already exists, refreshed")
 
 
 if __name__ == "__main__":

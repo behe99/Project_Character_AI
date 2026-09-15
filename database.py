@@ -84,20 +84,23 @@ def add_character(name, personality, speech_style, backstory="", sample_lines=No
         conn.close()
 
 
-def update_character_backstory(name, backstory, sample_lines=None):
+def update_character(name, personality, speech_style, backstory="", sample_lines=None,
+                      relationships=None, triggers=None, interrupt_tendency="medium",
+                      assertiveness="medium"):
+    """Overwrites every field for an already-seeded character, so re-running
+    seed_characters.py keeps existing rows in sync with edits to CHARACTERS."""
     conn = get_connection()
     try:
         cursor = conn.cursor()
-        if sample_lines is None:
-            cursor.execute(
-                "UPDATE characters SET backstory = ? WHERE name = ?",
-                (backstory, name)
-            )
-        else:
-            cursor.execute(
-                "UPDATE characters SET backstory = ?, sample_lines = ? WHERE name = ?",
-                (backstory, json.dumps(sample_lines), name)
-            )
+        cursor.execute(
+            """UPDATE characters
+               SET personality = ?, speech_style = ?, backstory = ?, sample_lines = ?,
+                   relationships = ?, triggers = ?, interrupt_tendency = ?, assertiveness = ?
+               WHERE name = ?""",
+            (personality, speech_style, backstory, json.dumps(sample_lines or []),
+             json.dumps(relationships or {}), json.dumps(triggers or []),
+             interrupt_tendency, assertiveness, name)
+        )
         conn.commit()
     except Exception:
         conn.rollback()
