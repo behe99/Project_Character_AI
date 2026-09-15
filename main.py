@@ -1,6 +1,7 @@
-from database import init_db, create_session, add_message
+from database import init_db, create_session, add_message, get_all_characters
 from router import decide_speakers
 from character_response import generate_character_reply
+from seed_characters import seed
 
 MAX_CHARACTER_TURNS_PER_MESSAGE = 6
 
@@ -31,6 +32,10 @@ def run_conversation_turn(session_id, user_message):
 
 def main():
     init_db()
+    if not get_all_characters():
+        print("No characters found in the database, seeding the roster...")
+        seed()
+
     session_id = create_session("Chat Session")
     print("Character AI chatroom. Type 'quit' to exit.\n")
 
