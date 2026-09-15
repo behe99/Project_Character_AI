@@ -26,10 +26,12 @@ def generate_character_reply(session_id, character_name):
     messages = get_messages(session_id)
     transcript = build_transcript(messages)
     relationships = json.loads(character["relationships"])
+    triggers = json.loads(character["triggers"])
 
     relationships_text = "\n".join(
         f"- {name}: {feeling}" for name, feeling in relationships.items()
     ) or "No specific relationships recorded."
+    triggers_text = ", ".join(triggers) or "nothing in particular"
 
     prompt = f"""You are roleplaying as {character['name']} in a group chat.
 
@@ -39,15 +41,25 @@ PERSONALITY:
 SPEECH STYLE:
 {character['speech_style']}
 
+THINGS YOU CARE ABOUT (you light up and get more talkative when these come up):
+{triggers_text}
+
 YOUR RELATIONSHIPS WITH OTHERS IN THIS CHAT:
 {relationships_text}
 
 RECENT CONVERSATION:
 {transcript}
 
-Write {character['name']}'s next message in the conversation. Stay fully in character.
-Keep it to 1-4 sentences, like a real chat message, not a speech.
-Do NOT include the character's name as a prefix (e.g. don't write "Tyrion: ..."), just write the message itself.
+Write {character['name']}'s next message, staying fully in character. Match your energy
+to what was actually just said, the way a real person would:
+- If the latest message is small talk, a greeting, or something mundane, respond briefly
+  and casually. A short, plain reply is fine and often better than a long one.
+- If the latest message touches something you care about (see above) or is aimed at you
+  directly, feel free to open up more and let your personality and opinions show.
+- Never force your interests or backstory into a conversation that has nothing to do with
+  them. A genuine person doesn't launch into a speech about war because someone said hi.
+
+Do NOT include your name as a prefix (e.g. don't write "Tyrion: ..."), just write the message itself.
 """
 
     reply_text = call_model(prompt)
