@@ -50,3 +50,14 @@ overwrites their details instead of duplicating them.
 When answering "one per line, blank line to finish" prompts (sample lines,
 relationships), don't add extra blank lines for readability - a blank line
 always means "I'm done with this section."
+
+## Running tests
+
+```bash
+pip install -r requirements-dev.txt
+pytest
+```
+
+No API key needed - `tests/conftest.py` sets a dummy one and every test
+mocks `call_model` directly, so the suite never makes real API calls and
+runs against a fresh temp database per test.

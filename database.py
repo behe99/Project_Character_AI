@@ -78,6 +78,9 @@ def add_character(name, personality, speech_style, backstory="", sample_lines=No
         )
         conn.commit()
     except Exception:
+        # Without this, a failed INSERT can leave the next call on this file
+        # failing with "database is locked" - a timing-sensitive race, not
+        # guaranteed on every failure, but real and worth avoiding here.
         conn.rollback()
         raise
     finally:
