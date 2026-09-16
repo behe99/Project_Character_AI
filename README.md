@@ -9,6 +9,7 @@ respond to a human user and to each other, powered by Gemini.
 - `llm.py` — shared Gemini client/model call with retry logic.
 - `seed_characters.py` — seeds the database with the character roster.
 - `main.py` — interactive chat loop.
+- `history.py` — list and view past conversations.
 
 ## Setup
 
@@ -24,4 +25,12 @@ python seed_characters.py
 python main.py
 ```
 
-Type a message and press enter. Type `quit` to exit.
+Type a message and press enter. Type `quit` to exit. Running `main.py` again
+resumes your most recent conversation instead of starting over.
+
+## Viewing past conversations
+
+```bash
+python history.py          # list all conversations
+python history.py 2        # show the full transcript of session 2
+```

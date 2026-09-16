@@ -144,6 +144,21 @@ def get_last_session():
     return dict(row) if row else None
 
 
+def get_all_sessions():
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT sessions.*, COUNT(messages.id) AS message_count
+        FROM sessions
+        LEFT JOIN messages ON messages.session_id = sessions.id
+        GROUP BY sessions.id
+        ORDER BY sessions.id
+    """)
+    rows = cursor.fetchall()
+    conn.close()
+    return [dict(row) for row in rows]
+
+
 def add_message(session_id, sender, content):
     conn = get_connection()
     try:
