@@ -18,6 +18,64 @@ def test_api_characters_lists_roster(db):
     assert names == ["Test Character"]
 
 
+def test_api_create_character(db):
+    client = client_for(db)
+
+    res = client.post("/api/characters", json={
+        "name": "Melisandre",
+        "personality": "A red priestess obsessed with fire and prophecy.",
+        "speech_style": "Mystical, short declarations.",
+        "sample_lines": ["The night is dark and full of terrors."],
+        "relationships": {"Jon Snow": "brought him back from death"},
+        "triggers": ["fire", "prophecy"],
+        "interrupt_tendency": "high",
+    })
+    assert res.status_code == 201
+
+    characters = db.get_all_characters()
+    assert len(characters) == 1
+    assert characters[0]["name"] == "Melisandre"
+    assert characters[0]["interrupt_tendency"] == "high"
+    assert characters[0]["assertiveness"] == "medium"  # default
+
+
+def test_api_create_character_requires_core_fields(db):
+    client = client_for(db)
+
+    res = client.post("/api/characters", json={"name": "X"})
+    assert res.status_code == 400
+    assert db.get_all_characters() == []
+
+
+def test_api_create_character_rejects_duplicate_name(db):
+    db.add_character(**ONE_CHARACTER)
+    client = client_for(db)
+
+    res = client.post("/api/characters", json={
+        "name": "Test Character",
+        "personality": "different",
+        "speech_style": "different",
+    })
+    assert res.status_code == 409
+    assert len(db.get_all_characters()) == 1
+
+
+def test_api_delete_character(db):
+    db.add_character(**ONE_CHARACTER)
+    client = client_for(db)
+
+    res = client.delete("/api/characters/Test Character")
+    assert res.status_code == 200
+    assert db.get_all_characters() == []
+
+
+def test_api_delete_character_returns_404_when_not_found(db):
+    client = client_for(db)
+
+    res = client.delete("/api/characters/Nobody")
+    assert res.status_code == 404
+
+
 def test_api_session_creates_one_when_none_exists(db):
     client = client_for(db)
 

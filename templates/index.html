@@ -111,12 +111,92 @@
     font-size: 14px;
   }
   #send-btn:disabled { opacity: 0.5; cursor: default; }
+  .header-actions { display: flex; gap: 10px; }
+  #manage-btn {
+    background: transparent;
+    color: var(--text);
+    border: 1px solid var(--border);
+    padding: 8px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+  }
+  #manage-btn:hover { border-color: var(--accent); }
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    width: 520px;
+    max-width: 92vw;
+    max-height: 86vh;
+    overflow-y: auto;
+    padding: 20px;
+  }
+  .modal h2 { margin: 0 0 14px; font-size: 16px; }
+  .modal-close { float: right; background: none; border: none; color: var(--muted); font-size: 18px; cursor: pointer; }
+  .char-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+  }
+  .char-row .left { display: flex; align-items: center; gap: 8px; }
+  .remove-btn {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    border-radius: 5px;
+    padding: 3px 8px;
+    cursor: pointer;
+    font-size: 12px;
+  }
+  .remove-btn:hover { color: #e06a6a; border-color: #e06a6a; }
+  .modal form { margin-top: 16px; display: flex; flex-direction: column; gap: 8px; }
+  .modal label { font-size: 12px; color: var(--muted); margin-bottom: -4px; }
+  .modal input, .modal textarea, .modal select {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 6px;
+    padding: 7px 10px;
+    font-size: 13px;
+    font-family: inherit;
+    resize: vertical;
+  }
+  .modal .row2 { display: flex; gap: 8px; }
+  .modal .row2 > * { flex: 1; }
+  #add-char-btn {
+    background: var(--accent);
+    color: white;
+    border: none;
+    padding: 9px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    margin-top: 4px;
+  }
+  #char-form-error { color: #e06a6a; font-size: 12px; min-height: 16px; }
 </style>
 </head>
 <body>
   <header>
     <h1>Character AI Chatroom</h1>
-    <button id="new-session-btn">New Conversation</button>
+    <div class="header-actions">
+      <button id="manage-btn">Manage Characters</button>
+      <button id="new-session-btn">New Conversation</button>
+    </div>
   </header>
   <div id="roster"></div>
   <div id="messages"></div>
@@ -124,6 +204,59 @@
   <div id="input-bar">
     <input id="message-input" type="text" placeholder="Type a message..." autocomplete="off">
     <button id="send-btn">Send</button>
+  </div>
+
+  <div class="modal-overlay" id="manage-overlay">
+    <div class="modal">
+      <button class="modal-close" id="modal-close-btn">&times;</button>
+      <h2>Characters</h2>
+      <div id="char-list"></div>
+
+      <form id="char-form">
+        <label>Name</label>
+        <input id="f-name" type="text" required>
+
+        <label>Personality</label>
+        <textarea id="f-personality" rows="2" required></textarea>
+
+        <label>Speech style (mention that they keep replies short!)</label>
+        <textarea id="f-speech-style" rows="2" required></textarea>
+
+        <label>Backstory (optional)</label>
+        <textarea id="f-backstory" rows="2"></textarea>
+
+        <label>Sample lines (one per line, in their actual voice)</label>
+        <textarea id="f-sample-lines" rows="3" placeholder="Didn't ask.&#10;Careful. I don't forget things like that."></textarea>
+
+        <label>Relationships (one per line: Name: how they feel about them)</label>
+        <textarea id="f-relationships" rows="2" placeholder="Jon Snow: trusts him completely"></textarea>
+
+        <label>Triggers/interests (comma-separated)</label>
+        <input id="f-triggers" type="text" placeholder="wine, politics, family">
+
+        <div class="row2">
+          <div>
+            <label>Interrupt tendency</label>
+            <select id="f-interrupt">
+              <option value="low">low</option>
+              <option value="medium" selected>medium</option>
+              <option value="high">high</option>
+            </select>
+          </div>
+          <div>
+            <label>Assertiveness</label>
+            <select id="f-assertiveness">
+              <option value="low">low</option>
+              <option value="medium" selected>medium</option>
+              <option value="high">high</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="char-form-error"></div>
+        <button type="submit" id="add-char-btn">Add Character</button>
+      </form>
+    </div>
   </div>
 
 <script>
@@ -134,6 +267,7 @@ const COLOR_PALETTE = [
 ];
 
 let colorMap = {};
+let characters = [];
 let sessionId = null;
 
 const messagesEl = document.getElementById("messages");
@@ -142,6 +276,12 @@ const typingEl = document.getElementById("typing");
 const inputEl = document.getElementById("message-input");
 const sendBtn = document.getElementById("send-btn");
 const newSessionBtn = document.getElementById("new-session-btn");
+const manageBtn = document.getElementById("manage-btn");
+const manageOverlay = document.getElementById("manage-overlay");
+const modalCloseBtn = document.getElementById("modal-close-btn");
+const charListEl = document.getElementById("char-list");
+const charForm = document.getElementById("char-form");
+const charFormError = document.getElementById("char-form-error");
 
 function colorFor(name) {
   return colorMap[name] || "#ffffff";
@@ -167,7 +307,7 @@ function appendMessage(sender, content, kind) {
 
 async function loadCharacters() {
   const res = await fetch("/api/characters");
-  const characters = await res.json();
+  characters = await res.json();
   colorMap = {};
   rosterEl.innerHTML = "";
   characters.forEach((c, i) => {
@@ -178,6 +318,99 @@ async function loadCharacters() {
     item.innerHTML = `<span class="dot" style="background:${color}"></span>${c.name}`;
     rosterEl.appendChild(item);
   });
+  renderCharList();
+}
+
+function renderCharList() {
+  charListEl.innerHTML = "";
+  if (characters.length === 0) {
+    charListEl.innerHTML = '<p style="color:var(--muted); font-size:13px;">No characters yet.</p>';
+    return;
+  }
+  characters.forEach(c => {
+    const row = document.createElement("div");
+    row.className = "char-row";
+    row.innerHTML = `
+      <div class="left">
+        <span class="dot" style="background:${colorFor(c.name)}"></span>
+        <span>${c.name}</span>
+      </div>
+      <button class="remove-btn" data-name="${c.name}">Remove</button>
+    `;
+    charListEl.appendChild(row);
+  });
+  charListEl.querySelectorAll(".remove-btn").forEach(btn => {
+    btn.addEventListener("click", () => removeCharacter(btn.dataset.name));
+  });
+}
+
+async function removeCharacter(name) {
+  if (!confirm(`Remove ${name}? This can't be undone (past messages from them stay in history).`)) {
+    return;
+  }
+  const res = await fetch(`/api/characters/${encodeURIComponent(name)}`, { method: "DELETE" });
+  if (res.ok) {
+    await loadCharacters();
+  } else {
+    const data = await res.json();
+    alert(data.error || "Could not remove character.");
+  }
+}
+
+function parseLines(text) {
+  return text.split("\n").map(l => l.trim()).filter(Boolean);
+}
+
+function parseRelationships(text) {
+  const relationships = {};
+  parseLines(text).forEach(line => {
+    const idx = line.indexOf(":");
+    if (idx === -1) return;
+    relationships[line.slice(0, idx).trim()] = line.slice(idx + 1).trim();
+  });
+  return relationships;
+}
+
+async function submitNewCharacter(e) {
+  e.preventDefault();
+  charFormError.textContent = "";
+
+  const payload = {
+    name: document.getElementById("f-name").value.trim(),
+    personality: document.getElementById("f-personality").value.trim(),
+    speech_style: document.getElementById("f-speech-style").value.trim(),
+    backstory: document.getElementById("f-backstory").value.trim(),
+    sample_lines: parseLines(document.getElementById("f-sample-lines").value),
+    relationships: parseRelationships(document.getElementById("f-relationships").value),
+    triggers: document.getElementById("f-triggers").value.split(",").map(t => t.trim()).filter(Boolean),
+    interrupt_tendency: document.getElementById("f-interrupt").value,
+    assertiveness: document.getElementById("f-assertiveness").value,
+  };
+
+  const res = await fetch("/api/characters", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+
+  if (!res.ok) {
+    charFormError.textContent = data.error || "Could not add character.";
+    return;
+  }
+
+  charForm.reset();
+  await loadCharacters();
+}
+
+function openManageModal() {
+  charFormError.textContent = "";
+  renderCharList();
+  manageOverlay.classList.add("open");
+}
+
+function closeManageModal() {
+  manageOverlay.classList.remove("open");
 }
 
 async function loadSession() {
@@ -232,6 +465,12 @@ newSessionBtn.addEventListener("click", async () => {
   sessionId = data.session_id;
   messagesEl.innerHTML = "";
 });
+manageBtn.addEventListener("click", openManageModal);
+modalCloseBtn.addEventListener("click", closeManageModal);
+manageOverlay.addEventListener("click", e => {
+  if (e.target === manageOverlay) closeManageModal();
+});
+charForm.addEventListener("submit", submitNewCharacter);
 
 (async function init() {
   await loadCharacters();

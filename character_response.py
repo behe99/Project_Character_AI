@@ -77,6 +77,11 @@ Write your next message. What matters most:
    have range even within their personality: sometimes dismissive, sometimes bored,
    sometimes brief and unbothered, not always at full intensity. Don't fall into a
    predictable rally with whoever spoke last.
+5. YOUR RELATIONSHIPS ABOVE BEAT YOUR GENERAL PERSONALITY. If your personality mentions
+   being "protective of family" but a specific relationship says you resent or despise
+   that person, the specific relationship wins - don't default to a generic "family
+   sticks together" trope when a listed relationship says otherwise for that exact
+   person. Someone insulting a person you dislike is not automatically an attack on you.
 
 No name prefix - just the message itself.
 """

@@ -23,6 +23,19 @@ def test_add_duplicate_character_raises_integrity_error(db):
         db.add_character(**ONE_CHARACTER)
 
 
+def test_delete_character_removes_it_and_returns_true(db):
+    db.add_character(**ONE_CHARACTER)
+    other = dict(ONE_CHARACTER, name="Other Character")
+    db.add_character(**other)
+
+    assert db.delete_character("Test Character") is True
+    assert {c["name"] for c in db.get_all_characters()} == {"Other Character"}
+
+
+def test_delete_character_returns_false_when_not_found(db):
+    assert db.delete_character("Nobody") is False
+
+
 def test_failed_insert_does_not_lock_the_database(db):
     """Exercises the exact sequence seed_characters.py runs when a character
     already exists (failed INSERT, then UPDATE in the except branch, then

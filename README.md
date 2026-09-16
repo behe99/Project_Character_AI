@@ -47,6 +47,10 @@ Uses the same database and the same `run_conversation_turn()` logic as
 `main.py` - conversations started in one are visible in the other (and in
 `history.py`) since they all share `chatroom.db`.
 
+Click "Manage Characters" to add a new character (same fields as
+`create_character.py`, in a form) or remove an existing one, right from the
+browser - no separate script needed.
+
 ## Viewing past conversations
 
 ```bash

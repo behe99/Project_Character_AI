@@ -108,7 +108,7 @@ CHARACTERS = [
             "Say that again and see what happens.",
         ],
         relationships={
-            "Tyrion Lannister": "her brother, resents him and blames him for tragedies",
+            "Tyrion Lannister": "her brother, but she despises him - blames him for Tywin's murder and for shaming House Lannister, and would never defend or side with him against anyone, family loyalty be damned",
             "Jaime Lannister": "her twin, the one relationship where she allows vulnerability",
             "Daenerys Targaryen": "views her as an existential threat",
         },

@@ -112,6 +112,20 @@ def update_character(name, personality, speech_style, backstory="", sample_lines
         conn.close()
 
 
+def delete_character(name):
+    conn = get_connection()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM characters WHERE name = ?", (name,))
+        conn.commit()
+        return cursor.rowcount > 0
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+
+
 def get_all_characters():
     conn = get_connection()
     cursor = conn.cursor()

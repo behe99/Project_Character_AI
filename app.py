@@ -1,7 +1,10 @@
+import sqlite3
+
 from flask import Flask, jsonify, request, render_template
 
 from database import (
     init_db, get_all_characters, get_last_session, create_session, get_messages,
+    add_character, delete_character,
 )
 from seed_characters import seed
 from main import run_conversation_turn
@@ -34,6 +37,42 @@ def api_characters():
         {"id": c["id"], "name": c["name"], "personality": c["personality"]}
         for c in characters
     ])
+
+
+@app.route("/api/characters", methods=["POST"])
+def api_create_character():
+    data = request.get_json(silent=True) or {}
+    name = (data.get("name") or "").strip()
+    personality = (data.get("personality") or "").strip()
+    speech_style = (data.get("speech_style") or "").strip()
+
+    if not name or not personality or not speech_style:
+        return jsonify({"error": "name, personality, and speech_style are required"}), 400
+
+    try:
+        add_character(
+            name=name,
+            personality=personality,
+            speech_style=speech_style,
+            backstory=(data.get("backstory") or "").strip(),
+            sample_lines=data.get("sample_lines") or [],
+            relationships=data.get("relationships") or {},
+            triggers=data.get("triggers") or [],
+            interrupt_tendency=data.get("interrupt_tendency") or "medium",
+            assertiveness=data.get("assertiveness") or "medium",
+        )
+    except sqlite3.IntegrityError:
+        return jsonify({"error": f"'{name}' already exists"}), 409
+
+    return jsonify({"ok": True}), 201
+
+
+@app.route("/api/characters/<name>", methods=["DELETE"])
+def api_delete_character(name):
+    deleted = delete_character(name)
+    if not deleted:
+        return jsonify({"error": f"'{name}' not found"}), 404
+    return jsonify({"ok": True})
 
 
 @app.route("/api/session")
