@@ -135,6 +135,15 @@ def create_session(name):
         conn.close()
 
 
+def get_last_session():
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM sessions ORDER BY id DESC LIMIT 1")
+    row = cursor.fetchone()
+    conn.close()
+    return dict(row) if row else None
+
+
 def add_message(session_id, sender, content):
     conn = get_connection()
     try:
