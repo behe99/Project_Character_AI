@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Character AI Chatroom</title>
+<style>
+  :root {
+    --bg: #1e1f26;
+    --panel: #262832;
+    --border: #383a48;
+    --text: #e8e8ec;
+    --muted: #8b8d9b;
+    --accent: #5b8dff;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 20px;
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+  }
+  header h1 { font-size: 17px; margin: 0; }
+  #new-session-btn {
+    background: var(--accent);
+    color: white;
+    border: none;
+    padding: 8px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+  }
+  #new-session-btn:hover { opacity: 0.85; }
+  #roster {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 16px;
+    padding: 10px 20px;
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+  }
+  .roster-item { display: flex; align-items: center; gap: 6px; color: var(--muted); }
+  .dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+  #messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .msg { max-width: 80%; line-height: 1.4; }
+  .msg .name { font-weight: 600; margin-right: 6px; }
+  .msg.user { align-self: flex-end; text-align: right; color: var(--text); }
+  .msg.user .bubble {
+    background: var(--accent);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 12px 12px 2px 12px;
+    display: inline-block;
+  }
+  .msg.character .bubble {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    padding: 8px 12px;
+    border-radius: 12px 12px 12px 2px;
+    display: inline-block;
+  }
+  .msg.error .bubble {
+    background: transparent;
+    border: 1px dashed var(--border);
+    color: var(--muted);
+    font-style: italic;
+  }
+  #typing { padding: 0 20px 8px; color: var(--muted); font-size: 13px; font-style: italic; min-height: 18px; }
+  #input-bar {
+    display: flex;
+    gap: 10px;
+    padding: 14px 20px;
+    background: var(--panel);
+    border-top: 1px solid var(--border);
+  }
+  #message-input {
+    flex: 1;
+    padding: 10px 14px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text);
+    font-size: 14px;
+  }
+  #message-input:focus { outline: 1px solid var(--accent); }
+  #send-btn {
+    background: var(--accent);
+    color: white;
+    border: none;
+    padding: 0 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+  }
+  #send-btn:disabled { opacity: 0.5; cursor: default; }
+</style>
+</head>
+<body>
+  <header>
+    <h1>Character AI Chatroom</h1>
+    <button id="new-session-btn">New Conversation</button>
+  </header>
+  <div id="roster"></div>
+  <div id="messages"></div>
+  <div id="typing"></div>
+  <div id="input-bar">
+    <input id="message-input" type="text" placeholder="Type a message..." autocomplete="off">
+    <button id="send-btn">Send</button>
+  </div>
+
+<script>
+const COLOR_PALETTE = [
+  "#5b8dff", "#e0b04a", "#57c26b", "#d97fd9",
+  "#6ac3d9", "#e06a6a", "#8ee0d0", "#e0e05b",
+  "#a0e05b", "#e08ee0", "#8ea0e0", "#e08e8e",
+];
+
+let colorMap = {};
+let sessionId = null;
+
+const messagesEl = document.getElementById("messages");
+const rosterEl = document.getElementById("roster");
+const typingEl = document.getElementById("typing");
+const inputEl = document.getElementById("message-input");
+const sendBtn = document.getElementById("send-btn");
+const newSessionBtn = document.getElementById("new-session-btn");
+
+function colorFor(name) {
+  return colorMap[name] || "#ffffff";
+}
+
+function appendMessage(sender, content, kind) {
+  const row = document.createElement("div");
+  row.className = "msg " + kind;
+  const bubble = document.createElement("div");
+  bubble.className = "bubble";
+  if (kind === "character") {
+    const nameSpan = document.createElement("span");
+    nameSpan.className = "name";
+    nameSpan.textContent = sender;
+    nameSpan.style.color = colorFor(sender);
+    bubble.appendChild(nameSpan);
+  }
+  bubble.appendChild(document.createTextNode(content));
+  row.appendChild(bubble);
+  messagesEl.appendChild(row);
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+}
+
+async function loadCharacters() {
+  const res = await fetch("/api/characters");
+  const characters = await res.json();
+  colorMap = {};
+  rosterEl.innerHTML = "";
+  characters.forEach((c, i) => {
+    const color = COLOR_PALETTE[i % COLOR_PALETTE.length];
+    colorMap[c.name] = color;
+    const item = document.createElement("div");
+    item.className = "roster-item";
+    item.innerHTML = `<span class="dot" style="background:${color}"></span>${c.name}`;
+    rosterEl.appendChild(item);
+  });
+}
+
+async function loadSession() {
+  const res = await fetch("/api/session");
+  const data = await res.json();
+  sessionId = data.session_id;
+  messagesEl.innerHTML = "";
+  data.messages.forEach(m => {
+    appendMessage(m.sender, m.content, m.sender === "user" ? "user" : "character");
+  });
+}
+
+async function sendMessage() {
+  const text = inputEl.value.trim();
+  if (!text) return;
+
+  appendMessage(null, text, "user");
+  inputEl.value = "";
+  inputEl.disabled = true;
+  sendBtn.disabled = true;
+  typingEl.textContent = "Characters are typing...";
+
+  try {
+    const res = await fetch("/api/message", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ session_id: sessionId, message: text }),
+    });
+    const data = await res.json();
+    if (data.error) {
+      appendMessage(null, data.error, "error");
+    } else {
+      data.replies.forEach(r => appendMessage(r.sender, r.content, "character"));
+    }
+  } catch (e) {
+    appendMessage(null, "Could not reach the server.", "error");
+  } finally {
+    typingEl.textContent = "";
+    inputEl.disabled = false;
+    sendBtn.disabled = false;
+    inputEl.focus();
+  }
+}
+
+sendBtn.addEventListener("click", sendMessage);
+inputEl.addEventListener("keydown", e => {
+  if (e.key === "Enter") sendMessage();
+});
+newSessionBtn.addEventListener("click", async () => {
+  const res = await fetch("/api/session/new", { method: "POST" });
+  const data = await res.json();
+  sessionId = data.session_id;
+  messagesEl.innerHTML = "";
+});
+
+(async function init() {
+  await loadCharacters();
+  await loadSession();
+  inputEl.focus();
+})();
+</script>
+</body>
+</html>

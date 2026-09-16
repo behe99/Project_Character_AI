@@ -9,7 +9,8 @@ respond to a human user and to each other, powered by Gemini.
 - `llm.py` — shared Gemini client/model call with retry logic.
 - `seed_characters.py` — seeds the database with the character roster.
 - `create_character.py` — interactively add your own character.
-- `main.py` — interactive chat loop.
+- `main.py` — interactive terminal chat loop.
+- `app.py` — Flask web UI, built on the same `run_conversation_turn()` as main.py.
 - `history.py` — list and view past conversations.
 
 ## Setup
@@ -33,6 +34,18 @@ Type a message and press enter. In-chat commands:
 
 Running `main.py` again resumes your most recent conversation instead of
 starting over.
+
+## Web UI
+
+```bash
+python app.py
+```
+
+Opens a Flask server at http://127.0.0.1:5000 with a browser chat interface:
+colored character names, a roster legend, and a "New Conversation" button.
+Uses the same database and the same `run_conversation_turn()` logic as
+`main.py` - conversations started in one are visible in the other (and in
+`history.py`) since they all share `chatroom.db`.
 
 ## Viewing past conversations
 

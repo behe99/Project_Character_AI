@@ -6,18 +6,13 @@ import main
 def test_guarantees_at_least_one_reply_on_first_round(db, monkeypatch):
     db.add_character(**ONE_CHARACTER)
     session_id = db.create_session("s")
-    calls = []
 
     monkeypatch.setattr(main, "decide_speakers", lambda *a, **k: [])
-    monkeypatch.setattr(
-        main, "generate_character_reply",
-        lambda sid, name: calls.append(name) or "a reply"
-    )
+    monkeypatch.setattr(main, "generate_character_reply", lambda sid, name: "a reply")
 
-    color_map = main.build_color_map()
-    main.run_conversation_turn(session_id, "hello", color_map)
+    replies = main.run_conversation_turn(session_id, "hello")
 
-    assert calls == ["Test Character"]
+    assert [name for name, _ in replies] == ["Test Character"]
 
 
 def test_no_fallback_reply_on_later_rounds(db, monkeypatch):
@@ -25,7 +20,6 @@ def test_no_fallback_reply_on_later_rounds(db, monkeypatch):
     not to character-to-character rounds that legitimately end at 0."""
     db.add_character(**ONE_CHARACTER)
     session_id = db.create_session("s")
-    calls = []
 
     call_count = {"n": 0}
 
@@ -36,15 +30,11 @@ def test_no_fallback_reply_on_later_rounds(db, monkeypatch):
         return []
 
     monkeypatch.setattr(main, "decide_speakers", fake_decide_speakers)
-    monkeypatch.setattr(
-        main, "generate_character_reply",
-        lambda sid, name: calls.append(name) or "a reply"
-    )
+    monkeypatch.setattr(main, "generate_character_reply", lambda sid, name: "a reply")
 
-    color_map = main.build_color_map()
-    main.run_conversation_turn(session_id, "hello", color_map)
+    replies = main.run_conversation_turn(session_id, "hello")
 
-    assert calls == ["Test Character"]
+    assert [name for name, _ in replies] == ["Test Character"]
 
 
 def test_turn_cap_holds_even_if_router_never_stops(db, monkeypatch):
@@ -52,21 +42,16 @@ def test_turn_cap_holds_even_if_router_never_stops(db, monkeypatch):
     db.add_character(**ONE_CHARACTER)
     db.add_character(**other)
     session_id = db.create_session("s")
-    calls = []
 
     monkeypatch.setattr(
         main, "decide_speakers",
         lambda *a, **k: ["Test Character", "Other Character"]
     )
-    monkeypatch.setattr(
-        main, "generate_character_reply",
-        lambda sid, name: calls.append(name) or "a reply"
-    )
+    monkeypatch.setattr(main, "generate_character_reply", lambda sid, name: "a reply")
 
-    color_map = main.build_color_map()
-    main.run_conversation_turn(session_id, "hello", color_map)
+    replies = main.run_conversation_turn(session_id, "hello")
 
-    assert len(calls) == main.MAX_CHARACTER_TURNS_PER_MESSAGE
+    assert len(replies) == main.MAX_CHARACTER_TURNS_PER_MESSAGE
 
 
 def test_list_characters_prints_each_name(db, capsys):
