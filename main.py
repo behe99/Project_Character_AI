@@ -68,6 +68,17 @@ def run_conversation_turn(session_id, user_message, color_map):
         is_first_round = False
 
 
+def list_characters(color_map):
+    characters = sorted(get_all_characters(), key=lambda c: c["id"])
+    if not characters:
+        print("No characters in the roster.")
+        return
+    for c in characters:
+        color = color_map.get(c["name"], Fore.WHITE)
+        snippet = c["personality"].split(".")[0].strip()
+        print(f"{color}{c['name']}{Style.RESET_ALL} - {snippet}")
+
+
 def resume_or_create_session(color_map, recap_limit=6):
     last_session = get_last_session()
     if last_session is None:
@@ -96,14 +107,25 @@ def main():
 
     color_map = build_color_map()
     session_id = resume_or_create_session(color_map)
-    print("Character AI chatroom. Type 'quit' to exit.\n")
+    print("Character AI chatroom. Commands: 'quit', 'new' (fresh conversation), "
+          "'characters' (list roster).\n")
 
     while True:
         user_message = input("You: ").strip()
         if not user_message:
             continue
-        if user_message.lower() in ("quit", "exit"):
+
+        command = user_message.lower()
+        if command in ("quit", "exit"):
             break
+        if command == "new":
+            session_id = create_session("Chat Session")
+            print("Started a new conversation.\n")
+            continue
+        if command == "characters":
+            list_characters(color_map)
+            print()
+            continue
 
         try:
             run_conversation_turn(session_id, user_message, color_map)

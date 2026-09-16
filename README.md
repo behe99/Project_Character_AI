@@ -26,8 +26,13 @@ python seed_characters.py
 python main.py
 ```
 
-Type a message and press enter. Type `quit` to exit. Running `main.py` again
-resumes your most recent conversation instead of starting over.
+Type a message and press enter. In-chat commands:
+- `quit` — exit
+- `new` — start a fresh conversation without deleting any history
+- `characters` — list who's currently in the roster
+
+Running `main.py` again resumes your most recent conversation instead of
+starting over.
 
 ## Viewing past conversations
 

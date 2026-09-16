@@ -69,6 +69,23 @@ def test_turn_cap_holds_even_if_router_never_stops(db, monkeypatch):
     assert len(calls) == main.MAX_CHARACTER_TURNS_PER_MESSAGE
 
 
+def test_list_characters_prints_each_name(db, capsys):
+    db.add_character(**ONE_CHARACTER)
+    db.add_character(**dict(ONE_CHARACTER, name="Other Character"))
+
+    color_map = main.build_color_map()
+    main.list_characters(color_map)
+
+    out = capsys.readouterr().out
+    assert "Test Character" in out
+    assert "Other Character" in out
+
+
+def test_list_characters_handles_empty_roster(db, capsys):
+    main.list_characters({})
+    assert "No characters in the roster." in capsys.readouterr().out
+
+
 def test_build_color_map_assigns_one_color_per_character(db):
     db.add_character(**ONE_CHARACTER)
     db.add_character(**dict(ONE_CHARACTER, name="Other Character"))
