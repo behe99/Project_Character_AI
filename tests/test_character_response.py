@@ -44,6 +44,7 @@ def test_prompt_includes_backstory_and_sample_lines(db, monkeypatch):
     assert "Test line one." in captured["prompt"]
     assert "Test line two." in captured["prompt"]
     assert "testing" in captured["prompt"]
+    assert "A test world with no special rules." in captured["prompt"]
 
 
 def test_generate_replies_for_speakers_returns_in_order(db, monkeypatch):

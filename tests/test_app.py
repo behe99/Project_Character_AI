@@ -25,6 +25,7 @@ def test_api_create_character(db):
         "name": "Melisandre",
         "personality": "A red priestess obsessed with fire and prophecy.",
         "speech_style": "Mystical, short declarations.",
+        "world_context": "Medieval fantasy, no modern technology.",
         "sample_lines": ["The night is dark and full of terrors."],
         "relationships": {"Jon Snow": "brought him back from death"},
         "triggers": ["fire", "prophecy"],
@@ -47,6 +48,19 @@ def test_api_create_character_requires_core_fields(db):
     assert db.get_all_characters() == []
 
 
+def test_api_create_character_requires_world_context(db):
+    """world_context matters enough (a modern character assuming no phones exist,
+    or a fantasy character casually mentioning the internet) that it's required,
+    not just nice to have."""
+    client = client_for(db)
+
+    res = client.post("/api/characters", json={
+        "name": "X", "personality": "p", "speech_style": "s",
+    })
+    assert res.status_code == 400
+    assert db.get_all_characters() == []
+
+
 def test_api_create_character_rejects_duplicate_name(db):
     db.add_character(**ONE_CHARACTER)
     client = client_for(db)
@@ -55,6 +69,7 @@ def test_api_create_character_rejects_duplicate_name(db):
         "name": "Test Character",
         "personality": "different",
         "speech_style": "different",
+        "world_context": "different",
     })
     assert res.status_code == 409
     assert len(db.get_all_characters()) == 1

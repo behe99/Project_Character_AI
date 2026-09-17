@@ -78,14 +78,35 @@ python history.py 2        # show the full transcript of session 2
 python create_character.py
 ```
 
-Walks you through personality, speech style, backstory, a few sample lines
-in their voice, relationships, triggers, and how likely they are to jump
+Walks you through personality, speech style, world/setting, backstory,
+sample lines, relationships, triggers, and how likely they are to jump
 into a conversation. Running it again with an existing character's name
 overwrites their details instead of duplicating them.
 
 When answering "one per line, blank line to finish" prompts (sample lines,
 relationships), don't add extra blank lines for readability - a blank line
 always means "I'm done with this section."
+
+### Writing characters with real depth
+
+Two fields matter more than they look for how alive a character feels:
+
+- **World/setting** is not optional flavor text - it's what stops a modern
+  character from being confused by phones, or a medieval character from
+  casually mentioning the internet (a real bug this project hit before
+  this field existed). Every character - GoT or otherwise - needs their
+  own setting described, since the prompt no longer assumes any default.
+- **Personality and sample lines should cover multiple sides of them**,
+  not just their single most famous trait. A character described only as
+  "brilliant strategist who drinks" or "broods about death" will reduce
+  every message to that one theme - which is exactly what happened before
+  this was fixed. Write personality as several distinct facets (their wit
+  AND their warmth AND their insecurity), and write 5-6 sample lines
+  spanning different moods (a joke, irritation, a mundane reaction,
+  genuine vulnerability) instead of 2-3 lines that all sound the same.
+
+This applies to characters from any show, not just the current Game of
+Thrones cast - there's nothing GoT-specific left in the code.
 
 ## Running tests
 

@@ -26,7 +26,8 @@ def init_db():
             relationships TEXT DEFAULT '{}',
             triggers TEXT DEFAULT '[]',
             interrupt_tendency TEXT DEFAULT 'medium',
-            assertiveness TEXT DEFAULT 'medium'
+            assertiveness TEXT DEFAULT 'medium',
+            world_context TEXT DEFAULT ''
         )
     """)
 
@@ -37,6 +38,8 @@ def init_db():
         cursor.execute("ALTER TABLE characters ADD COLUMN backstory TEXT DEFAULT ''")
     if "sample_lines" not in existing_columns:
         cursor.execute("ALTER TABLE characters ADD COLUMN sample_lines TEXT DEFAULT '[]'")
+    if "world_context" not in existing_columns:
+        cursor.execute("ALTER TABLE characters ADD COLUMN world_context TEXT DEFAULT ''")
 
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS sessions (
@@ -78,17 +81,17 @@ def init_db():
 
 def add_character(name, personality, speech_style, backstory="", sample_lines=None,
                    relationships=None, triggers=None, interrupt_tendency="medium",
-                   assertiveness="medium"):
+                   assertiveness="medium", world_context=""):
     conn = get_connection()
     try:
         cursor = conn.cursor()
         cursor.execute(
             """INSERT INTO characters
-               (name, personality, speech_style, backstory, sample_lines, relationships, triggers, interrupt_tendency, assertiveness)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+               (name, personality, speech_style, backstory, sample_lines, relationships, triggers, interrupt_tendency, assertiveness, world_context)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (name, personality, speech_style, backstory, json.dumps(sample_lines or []),
              json.dumps(relationships or {}), json.dumps(triggers or []),
-             interrupt_tendency, assertiveness)
+             interrupt_tendency, assertiveness, world_context)
         )
         conn.commit()
     except Exception:
@@ -103,7 +106,7 @@ def add_character(name, personality, speech_style, backstory="", sample_lines=No
 
 def update_character(name, personality, speech_style, backstory="", sample_lines=None,
                       relationships=None, triggers=None, interrupt_tendency="medium",
-                      assertiveness="medium"):
+                      assertiveness="medium", world_context=""):
     """Overwrites every field for an already-seeded character, so re-running
     seed_characters.py keeps existing rows in sync with edits to CHARACTERS."""
     conn = get_connection()
@@ -112,11 +115,12 @@ def update_character(name, personality, speech_style, backstory="", sample_lines
         cursor.execute(
             """UPDATE characters
                SET personality = ?, speech_style = ?, backstory = ?, sample_lines = ?,
-                   relationships = ?, triggers = ?, interrupt_tendency = ?, assertiveness = ?
+                   relationships = ?, triggers = ?, interrupt_tendency = ?, assertiveness = ?,
+                   world_context = ?
                WHERE name = ?""",
             (personality, speech_style, backstory, json.dumps(sample_lines or []),
              json.dumps(relationships or {}), json.dumps(triggers or []),
-             interrupt_tendency, assertiveness, name)
+             interrupt_tendency, assertiveness, world_context, name)
         )
         conn.commit()
     except Exception:

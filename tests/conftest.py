@@ -25,6 +25,7 @@ ONE_CHARACTER = dict(
     name="Test Character",
     personality="A test personality.",
     speech_style="Speaks in short test sentences.",
+    world_context="A test world with no special rules.",
     backstory="A test backstory.",
     sample_lines=["Test line one.", "Test line two."],
     relationships={"Other Character": "knows them"},

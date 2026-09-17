@@ -45,15 +45,19 @@ def api_create_character():
     name = (data.get("name") or "").strip()
     personality = (data.get("personality") or "").strip()
     speech_style = (data.get("speech_style") or "").strip()
+    world_context = (data.get("world_context") or "").strip()
 
-    if not name or not personality or not speech_style:
-        return jsonify({"error": "name, personality, and speech_style are required"}), 400
+    if not name or not personality or not speech_style or not world_context:
+        return jsonify({
+            "error": "name, personality, speech_style, and world_context are required"
+        }), 400
 
     try:
         add_character(
             name=name,
             personality=personality,
             speech_style=speech_style,
+            world_context=world_context,
             backstory=(data.get("backstory") or "").strip(),
             sample_lines=data.get("sample_lines") or [],
             relationships=data.get("relationships") or {},

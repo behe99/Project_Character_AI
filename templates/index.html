@@ -265,17 +265,20 @@
         <label>Name</label>
         <input id="f-name" type="text" required>
 
-        <label>Personality</label>
-        <textarea id="f-personality" rows="2" required></textarea>
+        <label>Personality (cover multiple sides of them, not just one famous trait)</label>
+        <textarea id="f-personality" rows="3" placeholder="Their core traits AND their humor, warmth, insecurities, quiet moments..." required></textarea>
 
         <label>Speech style (mention that they keep replies short!)</label>
         <textarea id="f-speech-style" rows="2" required></textarea>
 
+        <label>World/setting (matters! e.g. "modern Earth, phones are normal" or "medieval fantasy, no technology")</label>
+        <textarea id="f-world-context" rows="2" required></textarea>
+
         <label>Backstory (optional)</label>
         <textarea id="f-backstory" rows="2"></textarea>
 
-        <label>Sample lines (one per line, in their actual voice)</label>
-        <textarea id="f-sample-lines" rows="3" placeholder="Didn't ask.&#10;Careful. I don't forget things like that."></textarea>
+        <label>Sample lines (5-6 short lines spanning different moods, not all one tone)</label>
+        <textarea id="f-sample-lines" rows="4" placeholder="Didn't ask.&#10;Careful. I don't forget things like that.&#10;That's actually kind of funny.&#10;I'm tired. Not of you. Of all of it."></textarea>
 
         <label>Relationships (one per line: Name: how they feel about them)</label>
         <textarea id="f-relationships" rows="2" placeholder="Jon Snow: trusts him completely"></textarea>
@@ -438,6 +441,7 @@ async function submitNewCharacter(e) {
     name: document.getElementById("f-name").value.trim(),
     personality: document.getElementById("f-personality").value.trim(),
     speech_style: document.getElementById("f-speech-style").value.trim(),
+    world_context: document.getElementById("f-world-context").value.trim(),
     backstory: document.getElementById("f-backstory").value.trim(),
     sample_lines: parseLines(document.getElementById("f-sample-lines").value),
     relationships: parseRelationships(document.getElementById("f-relationships").value),

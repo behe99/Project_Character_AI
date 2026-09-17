@@ -60,17 +60,28 @@ def create_character():
         print(f"'{name}' already exists - this will overwrite their details.\n")
 
     personality = prompt(
-        "Personality (their core traits, motivations, flaws - a sentence or two)"
+        "Personality - describe MULTIPLE distinct sides of them, not just their most "
+        "famous trait (e.g. not just 'brilliant strategist', but also their humor, "
+        "warmth, insecurities, what they're like in a quiet moment). A character "
+        "reduced to one trait ends up repeating themselves constantly in chat."
     )
     speech_style = prompt(
         "Speech style (how they talk - and mention that they keep it SHORT, "
         "since that matters a lot for how they'll actually sound in chat)"
     )
+    world_context = prompt(
+        "Their world/setting (e.g. 'modern-day Earth, phones and the internet are "
+        "normal' or 'medieval fantasy, no technology exists'). This matters: without "
+        "it, they may default to assuming a fantasy setting or get confused by "
+        "ordinary things from their own world."
+    )
     backstory = prompt("Backstory (their real history - can be a few sentences)", required=False)
 
     print()
     sample_lines = prompt_list(
-        "Sample lines - 2-3 short example lines in their actual voice",
+        "Sample lines - aim for 5-6 SHORT lines spanning different moods (a joke, "
+        "warmth, irritation, a mundane reaction, their signature trait) - not all the "
+        "same tone, or they'll come across one-dimensional",
         '"Didn\'t ask." or "Careful. I don\'t forget things like that."'
     )
     if not sample_lines:
@@ -93,6 +104,7 @@ def create_character():
         name=name,
         personality=personality,
         speech_style=speech_style,
+        world_context=world_context,
         backstory=backstory,
         sample_lines=sample_lines,
         relationships=relationships,
