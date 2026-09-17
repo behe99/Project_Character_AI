@@ -67,6 +67,10 @@ global "Select all"/"Select none". When adding a character, fill in the
 "Show/universe" field with an existing show's name to group them with it,
 or type a new one (leave it blank and they land under "Custom").
 
+Both modals also have a search box above the list - type a character's
+name or a show's name (e.g. "vikings") to instantly narrow it down, useful
+once you're adding your own characters on top of the seeded 45.
+
 ## Per-conversation casts
 
 Each conversation can have its own subset of characters instead of always

@@ -202,6 +202,11 @@
     gap: 8px;
     font-size: 13px;
   }
+  #pick-search, #char-search {
+    display: block;
+    width: 100%;
+    margin: 10px 0;
+  }
   .pick-actions { display: flex; gap: 8px; margin-bottom: 8px; }
   .link-btn {
     background: none;
@@ -263,11 +268,13 @@
       <p style="color:var(--muted); font-size:13px; margin-top:-8px;">
         Choose who's in this conversation.
       </p>
+      <input type="text" id="pick-search" placeholder="Search characters or shows...">
       <div class="pick-actions">
         <button type="button" class="link-btn" id="pick-all-btn">Select all</button>
         <button type="button" class="link-btn" id="pick-none-btn">Select none</button>
       </div>
       <div class="pick-list" id="pick-list"></div>
+      <p id="pick-empty" style="display:none; color:var(--muted); font-size:13px;">No characters match "<span id="pick-empty-query"></span>".</p>
       <button id="start-session-btn">Start Conversation</button>
     </div>
   </div>
@@ -276,7 +283,9 @@
     <div class="modal">
       <button class="modal-close" id="modal-close-btn">&times;</button>
       <h2>Characters</h2>
+      <input type="text" id="char-search" placeholder="Search characters or shows...">
       <div id="char-list"></div>
+      <p id="char-empty" style="display:none; color:var(--muted); font-size:13px;">No characters match "<span id="char-empty-query"></span>".</p>
 
       <form id="char-form">
         <label>Name</label>
@@ -361,6 +370,12 @@ const pickListEl = document.getElementById("pick-list");
 const pickAllBtn = document.getElementById("pick-all-btn");
 const pickNoneBtn = document.getElementById("pick-none-btn");
 const startSessionBtn = document.getElementById("start-session-btn");
+const pickSearchEl = document.getElementById("pick-search");
+const pickEmptyEl = document.getElementById("pick-empty");
+const pickEmptyQueryEl = document.getElementById("pick-empty-query");
+const charSearchEl = document.getElementById("char-search");
+const charEmptyEl = document.getElementById("char-empty");
+const charEmptyQueryEl = document.getElementById("char-empty-query");
 
 const SHOW_ORDER = ["Game of Thrones", "Vikings", "The Walking Dead"];
 
@@ -436,14 +451,19 @@ function renderCharList() {
     return;
   }
   groupByShow(characters).forEach(({ show, chars }) => {
+    const group = document.createElement("div");
+    group.className = "char-group";
+    group.dataset.show = show;
+
     const header = document.createElement("div");
     header.className = "group-header";
     header.innerHTML = `<span class="group-title">${show} (${chars.length})</span>`;
-    charListEl.appendChild(header);
+    group.appendChild(header);
 
     chars.forEach(c => {
       const row = document.createElement("div");
       row.className = "char-row";
+      row.dataset.name = c.name.toLowerCase();
       row.innerHTML = `
         <div class="left">
           <span class="dot" style="background:${colorFor(c.name)}"></span>
@@ -451,12 +471,31 @@ function renderCharList() {
         </div>
         <button class="remove-btn" data-name="${c.name}">Remove</button>
       `;
-      charListEl.appendChild(row);
+      group.appendChild(row);
     });
+    charListEl.appendChild(group);
   });
   charListEl.querySelectorAll(".remove-btn").forEach(btn => {
     btn.addEventListener("click", () => removeCharacter(btn.dataset.name));
   });
+}
+
+function filterGroups(container, query, emptyEl, emptyQueryEl, rowSelector) {
+  const q = query.trim().toLowerCase();
+  let anyVisible = false;
+  container.querySelectorAll(".char-group, .pick-group").forEach(group => {
+    const showMatches = group.dataset.show.toLowerCase().includes(q);
+    let groupHasVisible = false;
+    group.querySelectorAll(rowSelector).forEach(row => {
+      const matches = !q || showMatches || row.dataset.name.includes(q);
+      row.style.display = matches ? "" : "none";
+      if (matches) groupHasVisible = true;
+    });
+    group.style.display = groupHasVisible ? "" : "none";
+    if (groupHasVisible) anyVisible = true;
+  });
+  emptyEl.style.display = anyVisible ? "none" : "block";
+  emptyQueryEl.textContent = query;
 }
 
 async function removeCharacter(name) {
@@ -522,8 +561,10 @@ async function submitNewCharacter(e) {
 
 function openManageModal() {
   charFormError.textContent = "";
+  charSearchEl.value = "";
   renderCharList();
   manageOverlay.classList.add("open");
+  charSearchEl.focus();
 }
 
 function closeManageModal() {
@@ -544,6 +585,10 @@ async function loadSession() {
 function renderPickList() {
   pickListEl.innerHTML = "";
   groupByShow(characters).forEach(({ show, chars }) => {
+    const group = document.createElement("div");
+    group.className = "pick-group";
+    group.dataset.show = show;
+
     const header = document.createElement("div");
     header.className = "group-header";
     const safeShow = show.replace(/"/g, "&quot;");
@@ -554,19 +599,21 @@ function renderPickList() {
         <button type="button" class="link-btn group-none-btn" data-show="${safeShow}">none</button>
       </span>
     `;
-    pickListEl.appendChild(header);
+    group.appendChild(header);
 
     chars.forEach(c => {
       const row = document.createElement("label");
       row.className = "pick-row";
       row.dataset.show = show;
+      row.dataset.name = c.name.toLowerCase();
       row.innerHTML = `
         <input type="checkbox" class="pick-checkbox" value="${c.name}" checked>
         <span class="dot" style="background:${colorFor(c.name)}"></span>
         <span>${c.name}</span>
       `;
-      pickListEl.appendChild(row);
+      group.appendChild(row);
     });
+    pickListEl.appendChild(group);
   });
 
   pickListEl.querySelectorAll(".group-all-btn").forEach(btn => {
@@ -583,8 +630,10 @@ function setGroupChecked(show, checked) {
 }
 
 function openNewSessionModal() {
+  pickSearchEl.value = "";
   renderPickList();
   newSessionOverlay.classList.add("open");
+  pickSearchEl.focus();
 }
 
 function closeNewSessionModal() {
@@ -663,6 +712,12 @@ manageOverlay.addEventListener("click", e => {
   if (e.target === manageOverlay) closeManageModal();
 });
 charForm.addEventListener("submit", submitNewCharacter);
+pickSearchEl.addEventListener("input", () => {
+  filterGroups(pickListEl, pickSearchEl.value, pickEmptyEl, pickEmptyQueryEl, ".pick-row");
+});
+charSearchEl.addEventListener("input", () => {
+  filterGroups(charListEl, charSearchEl.value, charEmptyEl, charEmptyQueryEl, ".char-row");
+});
 
 (async function init() {
   await loadCharacters();
