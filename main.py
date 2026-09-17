@@ -10,7 +10,7 @@ from router import decide_speakers, decide_idle_speaker
 from character_response import generate_character_reply
 from seed_characters import seed
 
-MAX_CHARACTER_TURNS_PER_MESSAGE = 3
+MAX_CHARACTER_TURNS_PER_MESSAGE = 4
 
 COLOR_PALETTE = [
     Fore.CYAN, Fore.YELLOW, Fore.GREEN, Fore.MAGENTA,
@@ -53,7 +53,9 @@ def run_conversation_turn_stream(session_id, user_message, on_speaker_picked=Non
     is_first_round = True
 
     while turns_used < MAX_CHARACTER_TURNS_PER_MESSAGE:
-        speakers = decide_speakers(session_id, latest_message, exclude=last_speaker)
+        speakers = decide_speakers(
+            session_id, latest_message, exclude=last_speaker, turns_so_far=turns_used
+        )
 
         if not speakers:
             if not is_first_round:

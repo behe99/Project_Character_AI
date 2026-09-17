@@ -74,7 +74,7 @@ def test_run_conversation_turn_stream_calls_on_speaker_picked_for_each_turn(db, 
 
     call_count = {"n": 0}
 
-    def fake_decide_speakers(session_id, latest_message, exclude=None):
+    def fake_decide_speakers(session_id, latest_message, exclude=None, turns_so_far=0):
         call_count["n"] += 1
         return ["Test Character", "Other Character"] if call_count["n"] == 1 else []
 
@@ -127,7 +127,7 @@ def test_no_fallback_reply_on_later_rounds(db, monkeypatch):
 
     call_count = {"n": 0}
 
-    def fake_decide_speakers(session_id, latest_message, exclude=None):
+    def fake_decide_speakers(session_id, latest_message, exclude=None, turns_so_far=0):
         call_count["n"] += 1
         if call_count["n"] == 1:
             return ["Test Character"]
@@ -139,6 +139,29 @@ def test_no_fallback_reply_on_later_rounds(db, monkeypatch):
     replies = main.run_conversation_turn(session_id, "hello")
 
     assert [name for name, _ in replies] == ["Test Character"]
+
+
+def test_decide_speakers_is_told_how_many_turns_already_happened(db, monkeypatch):
+    """Each call to decide_speakers should see how many replies this round
+    has already produced, so the router's own prompt can get more reluctant
+    to continue as the round goes on - not stay identically permissive."""
+    other = dict(ONE_CHARACTER, name="Other Character")
+    db.add_character(**ONE_CHARACTER)
+    db.add_character(**other)
+    session_id = db.create_session("s")
+
+    seen_turns_so_far = []
+
+    def fake_decide_speakers(session_id, latest_message, exclude=None, turns_so_far=0):
+        seen_turns_so_far.append(turns_so_far)
+        return ["Test Character"] if turns_so_far == 0 else []
+
+    monkeypatch.setattr(main, "decide_speakers", fake_decide_speakers)
+    monkeypatch.setattr(main, "generate_character_reply", lambda sid, name: "a reply")
+
+    main.run_conversation_turn(session_id, "hello")
+
+    assert seen_turns_so_far == [0, 1]
 
 
 def test_turn_cap_holds_even_if_router_never_stops(db, monkeypatch):

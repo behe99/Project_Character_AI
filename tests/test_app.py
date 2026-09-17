@@ -212,7 +212,7 @@ def test_api_message_queues_instead_of_blocking(db, monkeypatch):
 
     call_count = {"n": 0}
 
-    def fake_decide_speakers(session_id, latest_message, exclude=None):
+    def fake_decide_speakers(session_id, latest_message, exclude=None, turns_so_far=0):
         call_count["n"] += 1
         return ["Test Character"] if call_count["n"] == 1 else []
 
@@ -251,7 +251,7 @@ def test_process_one_item_broadcasts_replies_then_round_done(db, monkeypatch):
 
     call_count = {"n": 0}
 
-    def fake_decide_speakers(session_id, latest_message, exclude=None):
+    def fake_decide_speakers(session_id, latest_message, exclude=None, turns_so_far=0):
         call_count["n"] += 1
         return ["Test Character"] if call_count["n"] == 1 else []
 

@@ -24,12 +24,28 @@ def build_transcript(messages, limit=10):
     return "\n".join(lines)
 
 
-def decide_speakers(session_id, latest_message, exclude=None):
+def decide_speakers(session_id, latest_message, exclude=None, turns_so_far=0):
     characters = get_session_characters(session_id)
     messages = get_messages(session_id)
 
     character_summary = build_character_summary(characters)
     transcript = build_transcript(messages)
+
+    if turns_so_far == 0:
+        turn_pressure = (
+            "This is the FIRST reply to this message - the most natural point for someone "
+            "to speak up, if anyone should at all."
+        )
+    else:
+        turn_pressure = (
+            f"{turns_so_far} character(s) have already replied to this same message in this "
+            "round. The bar for continuing climbs with every turn that's already happened - "
+            "most exchanges should have already ended by now. Only add another speaker for a "
+            "genuinely strong, specific reason (a direct challenge, their name called out, an "
+            "unanswered provocation aimed at them) - not because the topic could still support "
+            "more back-and-forth. Ending here (0 speakers) should be the most common outcome "
+            "at this point, not the exception."
+        )
 
     prompt = f"""You are the router for a group chat between fictional characters and a human user.
 
@@ -41,6 +57,8 @@ RECENT CONVERSATION:
 
 LATEST MESSAGE:
 {latest_message}
+
+{turn_pressure}
 
 Decide which character(s), if any, would naturally respond to the latest message, based on:
 - Relevance to their triggers/interests
@@ -62,6 +80,11 @@ real reason to - a direct challenge, a contradiction, something aimed at someone
 specifically - not just because the topic is still technically on the table. Most
 back-and-forths should end after one or two exchanges, not run on.
 
+VARY THE COUNT MESSAGE TO MESSAGE. Don't fall into a habit of always picking the same
+number of speakers - some messages genuinely deserve 0, some 1, occasionally more. If your
+last several picks all landed on the same count, that alone is a reason to reconsider
+whether this one really needs the same.
+
 DON'T DEFAULT TO THE SAME ONE OR TWO CHARACTERS OUT OF HABIT. Look at the recent
 conversation - if the same pair has been trading lines for several messages in a row,
 that's a sign to either let it end or bring in someone else with a genuine reason to
@@ -75,7 +98,11 @@ stay silent, even if the topic touches their interests too. Only include a bysta
 this case if they have a strong, specific reason to interrupt - the remark also targets
 them personally, or it's something they'd be compelled to react to - not just general
 relevance. A demand directed at "Varys" should not produce other characters as speakers
-unless something in the message also targets them specifically.
+unless something in the message also targets them specifically. This also applies when
+you're picking a SECOND character to react to the human user's own message: if you're
+about to add someone else on top of a speaker who's already answering the user directly,
+make sure that second character has their own real reason to speak, not just because the
+first one is already talking to the user.
 
 Choose AT MOST 2 characters. It's okay, and often correct, to choose 0.
 

@@ -79,6 +79,39 @@ def test_filters_out_characters_outside_the_session_roster(db, monkeypatch):
     assert speakers == ["Test Character"]
 
 
+def test_decide_speakers_prompt_notes_first_turn_by_default(db, monkeypatch):
+    db.add_character(**ONE_CHARACTER)
+    session_id = db.create_session("s")
+
+    captured = {}
+
+    def fake_call_model(prompt):
+        captured["prompt"] = prompt
+        return '{"speakers": []}'
+
+    monkeypatch.setattr(router, "call_model", fake_call_model)
+    router.decide_speakers(session_id, "hello")
+
+    assert "FIRST reply" in captured["prompt"]
+
+
+def test_decide_speakers_prompt_escalates_pressure_on_later_turns(db, monkeypatch):
+    db.add_character(**ONE_CHARACTER)
+    session_id = db.create_session("s")
+
+    captured = {}
+
+    def fake_call_model(prompt):
+        captured["prompt"] = prompt
+        return '{"speakers": []}'
+
+    monkeypatch.setattr(router, "call_model", fake_call_model)
+    router.decide_speakers(session_id, "hello", turns_so_far=2)
+
+    assert "2 character(s) have already replied" in captured["prompt"]
+    assert "FIRST reply" not in captured["prompt"]
+
+
 def test_decide_idle_speaker_returns_the_picked_name(db, monkeypatch):
     db.add_character(**ONE_CHARACTER)
     session_id = db.create_session("s")
