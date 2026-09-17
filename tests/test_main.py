@@ -54,6 +54,58 @@ def test_turn_cap_holds_even_if_router_never_stops(db, monkeypatch):
     assert len(replies) == main.MAX_CHARACTER_TURNS_PER_MESSAGE
 
 
+def test_fallback_reply_only_picks_from_the_session_roster(db, monkeypatch):
+    other = dict(ONE_CHARACTER, name="Other Character")
+    db.add_character(**ONE_CHARACTER)
+    db.add_character(**other)
+    session_id = db.create_session("s")
+    db.set_session_characters(session_id, ["Test Character"])
+
+    monkeypatch.setattr(main, "decide_speakers", lambda *a, **k: [])
+    monkeypatch.setattr(main, "generate_character_reply", lambda sid, name: "a reply")
+
+    replies = main.run_conversation_turn(session_id, "hello")
+
+    assert [name for name, _ in replies] == ["Test Character"]
+
+
+def test_choose_characters_cli_parses_selected_numbers(db, monkeypatch, capsys):
+    db.add_character(**ONE_CHARACTER)
+    db.add_character(**dict(ONE_CHARACTER, name="Other Character"))
+
+    monkeypatch.setattr("builtins.input", lambda prompt="": "2")
+
+    assert main.choose_characters_cli() == ["Other Character"]
+
+
+def test_choose_characters_cli_blank_input_means_everyone(db, monkeypatch):
+    db.add_character(**ONE_CHARACTER)
+    db.add_character(**dict(ONE_CHARACTER, name="Other Character"))
+
+    monkeypatch.setattr("builtins.input", lambda prompt="": "")
+
+    assert set(main.choose_characters_cli()) == {"Test Character", "Other Character"}
+
+
+def test_choose_characters_cli_garbage_input_means_everyone(db, monkeypatch):
+    db.add_character(**ONE_CHARACTER)
+
+    monkeypatch.setattr("builtins.input", lambda prompt="": "not a number")
+
+    assert main.choose_characters_cli() == ["Test Character"]
+
+
+def test_start_new_session_cli_scopes_the_new_session(db, monkeypatch):
+    db.add_character(**ONE_CHARACTER)
+    db.add_character(**dict(ONE_CHARACTER, name="Other Character"))
+
+    monkeypatch.setattr("builtins.input", lambda prompt="": "1")
+
+    session_id = main.start_new_session_cli()
+
+    assert [c["name"] for c in db.get_session_characters(session_id)] == ["Test Character"]
+
+
 def test_list_characters_prints_each_name(db, capsys):
     db.add_character(**ONE_CHARACTER)
     db.add_character(**dict(ONE_CHARACTER, name="Other Character"))

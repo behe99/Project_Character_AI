@@ -106,6 +106,29 @@ def test_api_new_session_creates_another_session(db):
     assert {s["id"] for s in db.get_all_sessions()} == {first, new_id}
 
 
+def test_api_new_session_with_characters_scopes_the_roster(db):
+    db.add_character(**ONE_CHARACTER)
+    db.add_character(**dict(ONE_CHARACTER, name="Other Character"))
+    client = client_for(db)
+
+    res = client.post("/api/session/new", json={"characters": ["Test Character"]})
+    session_id = res.get_json()["session_id"]
+
+    names = [c["name"] for c in db.get_session_characters(session_id)]
+    assert names == ["Test Character"]
+
+
+def test_api_session_reports_the_scoped_roster(db):
+    db.add_character(**ONE_CHARACTER)
+    db.add_character(**dict(ONE_CHARACTER, name="Other Character"))
+    session_id = db.create_session("s")
+    db.set_session_characters(session_id, ["Test Character"])
+    client = client_for(db)
+
+    res = client.get("/api/session")
+    assert res.get_json()["characters"] == ["Test Character"]
+
+
 def test_api_message_returns_replies(db, monkeypatch):
     db.add_character(**ONE_CHARACTER)
     session_id = db.create_session("s")

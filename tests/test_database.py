@@ -158,3 +158,47 @@ def test_get_all_sessions_includes_message_counts(db):
     by_id = {s["id"]: s for s in sessions}
     assert by_id[s1]["message_count"] == 2
     assert by_id[s2]["message_count"] == 0
+
+
+def test_get_session_characters_defaults_to_everyone_when_unscoped(db):
+    db.add_character(**ONE_CHARACTER)
+    db.add_character(**dict(ONE_CHARACTER, name="Other Character"))
+    session_id = db.create_session("s")
+
+    names = {c["name"] for c in db.get_session_characters(session_id)}
+    assert names == {"Test Character", "Other Character"}
+
+
+def test_set_session_characters_scopes_the_roster(db):
+    db.add_character(**ONE_CHARACTER)
+    db.add_character(**dict(ONE_CHARACTER, name="Other Character"))
+    session_id = db.create_session("s")
+
+    db.set_session_characters(session_id, ["Test Character"])
+
+    names = [c["name"] for c in db.get_session_characters(session_id)]
+    assert names == ["Test Character"]
+
+
+def test_set_session_characters_does_not_affect_other_sessions(db):
+    db.add_character(**ONE_CHARACTER)
+    db.add_character(**dict(ONE_CHARACTER, name="Other Character"))
+    scoped = db.create_session("scoped")
+    unscoped = db.create_session("unscoped")
+
+    db.set_session_characters(scoped, ["Test Character"])
+
+    assert [c["name"] for c in db.get_session_characters(scoped)] == ["Test Character"]
+    assert {c["name"] for c in db.get_session_characters(unscoped)} == {
+        "Test Character", "Other Character"
+    }
+
+
+def test_set_session_characters_with_empty_list_falls_back_to_everyone(db):
+    db.add_character(**ONE_CHARACTER)
+    session_id = db.create_session("s")
+
+    db.set_session_characters(session_id, [])
+
+    names = {c["name"] for c in db.get_session_characters(session_id)}
+    assert names == {"Test Character"}

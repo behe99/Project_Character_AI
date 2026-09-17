@@ -3,8 +3,8 @@ import sqlite3
 from flask import Flask, jsonify, request, render_template
 
 from database import (
-    init_db, get_all_characters, get_last_session, create_session, get_messages,
-    add_character, delete_character,
+    init_db, get_all_characters, get_session_characters, set_session_characters,
+    get_last_session, create_session, get_messages, add_character, delete_character,
 )
 from seed_characters import seed
 from main import run_conversation_turn
@@ -79,15 +79,23 @@ def api_delete_character(name):
 def api_session():
     session_id = get_or_create_session_id()
     messages = get_messages(session_id)
+    characters = sorted(get_session_characters(session_id), key=lambda c: c["id"])
     return jsonify({
         "session_id": session_id,
         "messages": [{"sender": m["sender"], "content": m["content"]} for m in messages],
+        "characters": [c["name"] for c in characters],
     })
 
 
 @app.route("/api/session/new", methods=["POST"])
 def api_new_session():
+    data = request.get_json(silent=True) or {}
+    character_names = data.get("characters")
+
     session_id = create_session("Chat Session")
+    if character_names:
+        set_session_characters(session_id, character_names)
+
     return jsonify({"session_id": session_id})
 
 

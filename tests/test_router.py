@@ -59,3 +59,21 @@ def test_missing_speakers_key_returns_empty_list(db, monkeypatch):
     monkeypatch.setattr(router, "call_model", lambda prompt: '{"something_else": []}')
 
     assert router.decide_speakers(session_id, "hello") == []
+
+
+def test_filters_out_characters_outside_the_session_roster(db, monkeypatch):
+    """A character who exists globally but isn't part of THIS session's
+    chosen cast should be filtered out just like a hallucinated name."""
+    other = dict(ONE_CHARACTER, name="Other Character")
+    db.add_character(**ONE_CHARACTER)
+    db.add_character(**other)
+    session_id = db.create_session("s")
+    db.set_session_characters(session_id, ["Test Character"])
+
+    monkeypatch.setattr(
+        router, "call_model",
+        lambda prompt: '{"speakers": ["Test Character", "Other Character"]}'
+    )
+
+    speakers = router.decide_speakers(session_id, "hello")
+    assert speakers == ["Test Character"]

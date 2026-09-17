@@ -4,7 +4,7 @@ from colorama import Fore, Style, init as colorama_init
 
 from database import (
     init_db, create_session, get_last_session, add_message,
-    get_all_characters, get_messages,
+    get_all_characters, get_session_characters, set_session_characters, get_messages,
 )
 from router import decide_speakers
 from character_response import generate_character_reply
@@ -55,7 +55,7 @@ def run_conversation_turn(session_id, user_message):
             if not is_first_round:
                 break
             fallback_pool = [
-                c["name"] for c in get_all_characters() if c["name"] != last_speaker
+                c["name"] for c in get_session_characters(session_id) if c["name"] != last_speaker
             ]
             speakers = [random.choice(fallback_pool)]
 
@@ -82,6 +82,44 @@ def list_characters(color_map):
         color = color_map.get(c["name"], Fore.WHITE)
         snippet = c["personality"].split(".")[0].strip()
         print(f"{color}{c['name']}{Style.RESET_ALL} - {snippet}")
+
+
+def list_session_characters(session_id, color_map):
+    characters = get_session_characters(session_id)
+    for c in characters:
+        color = color_map.get(c["name"], Fore.WHITE)
+        print(f"{color}{c['name']}{Style.RESET_ALL}")
+
+
+def choose_characters_cli():
+    """Lets the user pick a subset of characters for a new conversation.
+    Pressing enter with no input, or nothing valid getting picked, means
+    everyone - the same default a fresh session already has."""
+    characters = sorted(get_all_characters(), key=lambda c: c["id"])
+    print("Choose characters for this conversation (comma-separated numbers, "
+          "or press enter for everyone):")
+    for i, c in enumerate(characters, start=1):
+        print(f"  {i}. {c['name']}")
+
+    raw = input("> ").strip()
+    if not raw:
+        return [c["name"] for c in characters]
+
+    selected = []
+    for part in raw.split(","):
+        part = part.strip()
+        if part.isdigit() and 1 <= int(part) <= len(characters):
+            selected.append(characters[int(part) - 1]["name"])
+
+    return selected or [c["name"] for c in characters]
+
+
+def start_new_session_cli():
+    session_id = create_session("Chat Session")
+    selected = choose_characters_cli()
+    set_session_characters(session_id, selected)
+    print(f"Started a new conversation with {', '.join(selected)}.\n")
+    return session_id
 
 
 def resume_or_create_session(color_map, recap_limit=6):
@@ -112,8 +150,9 @@ def main():
 
     color_map = build_color_map()
     session_id = resume_or_create_session(color_map)
-    print("Character AI chatroom. Commands: 'quit', 'new' (fresh conversation), "
-          "'characters' (list roster).\n")
+    print("Character AI chatroom. Commands: 'quit', 'new' (fresh conversation, "
+          "choose the cast), 'characters' (full roster), 'roster' (who's in "
+          "this conversation).\n")
 
     while True:
         user_message = input("You: ").strip()
@@ -124,11 +163,14 @@ def main():
         if command in ("quit", "exit"):
             break
         if command == "new":
-            session_id = create_session("Chat Session")
-            print("Started a new conversation.\n")
+            session_id = start_new_session_cli()
             continue
         if command == "characters":
             list_characters(color_map)
+            print()
+            continue
+        if command == "roster":
+            list_session_characters(session_id, color_map)
             print()
             continue
 

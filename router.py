@@ -1,5 +1,5 @@
 import json
-from database import get_all_characters, get_messages
+from database import get_session_characters, get_messages
 from llm import call_model
 
 
@@ -25,7 +25,7 @@ def build_transcript(messages, limit=10):
 
 
 def decide_speakers(session_id, latest_message, exclude=None):
-    characters = get_all_characters()
+    characters = get_session_characters(session_id)
     messages = get_messages(session_id)
 
     character_summary = build_character_summary(characters)

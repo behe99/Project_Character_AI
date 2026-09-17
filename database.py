@@ -57,6 +57,20 @@ def init_db():
         )
     """)
 
+    # Which characters are "in the room" for a given session. A session with
+    # no rows here (every session created before this feature, or a new one
+    # where nobody picked a subset) falls back to every character - see
+    # get_session_characters().
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS session_characters (
+            session_id INTEGER NOT NULL,
+            character_id INTEGER NOT NULL,
+            PRIMARY KEY (session_id, character_id),
+            FOREIGN KEY (session_id) REFERENCES sessions (id),
+            FOREIGN KEY (character_id) REFERENCES characters (id)
+        )
+    """)
+
     conn.commit()
     conn.close()
     print("Database initialized successfully.")
@@ -130,6 +144,52 @@ def get_all_characters():
     conn = get_connection()
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM characters")
+    rows = cursor.fetchall()
+    conn.close()
+    return [dict(row) for row in rows]
+
+
+def set_session_characters(session_id, character_names):
+    """Scopes a session to a specific subset of characters. An empty list is
+    treated the same as never calling this at all - see get_session_characters."""
+    conn = get_connection()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM session_characters WHERE session_id = ?", (session_id,))
+        for name in character_names:
+            cursor.execute(
+                """INSERT INTO session_characters (session_id, character_id)
+                   SELECT ?, id FROM characters WHERE name = ?""",
+                (session_id, name)
+            )
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+
+
+def get_session_characters(session_id):
+    """Returns this session's chosen cast, or every character if none was
+    ever chosen (covers sessions from before this feature existed)."""
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        "SELECT COUNT(*) FROM session_characters WHERE session_id = ?", (session_id,)
+    )
+    has_scoped_roster = cursor.fetchone()[0] > 0
+
+    if not has_scoped_roster:
+        cursor.execute("SELECT * FROM characters")
+    else:
+        cursor.execute("""
+            SELECT characters.* FROM characters
+            JOIN session_characters ON session_characters.character_id = characters.id
+            WHERE session_characters.session_id = ?
+            ORDER BY characters.id
+        """, (session_id,))
+
     rows = cursor.fetchall()
     conn.close()
     return [dict(row) for row in rows]

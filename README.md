@@ -29,8 +29,10 @@ python main.py
 
 Type a message and press enter. In-chat commands:
 - `quit` — exit
-- `new` — start a fresh conversation without deleting any history
-- `characters` — list who's currently in the roster
+- `new` — start a fresh conversation; lets you pick which characters are in
+  it (press enter to include everyone)
+- `characters` — list every character in the database
+- `roster` — list who's actually in the current conversation
 
 Running `main.py` again resumes your most recent conversation instead of
 starting over.
@@ -42,14 +44,26 @@ python app.py
 ```
 
 Opens a Flask server at http://127.0.0.1:5000 with a browser chat interface:
-colored character names, a roster legend, and a "New Conversation" button.
-Uses the same database and the same `run_conversation_turn()` logic as
-`main.py` - conversations started in one are visible in the other (and in
-`history.py`) since they all share `chatroom.db`.
+colored character names, a roster legend for the current conversation, and
+a "New Conversation" button. Uses the same database and the same
+`run_conversation_turn()` logic as `main.py` - conversations started in one
+are visible in the other (and in `history.py`) since they all share
+`chatroom.db`.
 
 Click "Manage Characters" to add a new character (same fields as
 `create_character.py`, in a form) or remove an existing one, right from the
 browser - no separate script needed.
+
+## Per-conversation casts
+
+Each conversation can have its own subset of characters instead of always
+including everyone - useful for a smaller, more focused scene, or once
+you've added enough characters that not all of them make sense together.
+Clicking "New Conversation" (web) or typing `new` (terminal) lets you pick
+who's in that specific conversation; leaving everyone selected (or just
+pressing enter in the terminal) keeps the old "everyone's in the room"
+behavior. Conversations created before this feature, or where nobody
+picked a subset, still include every character - nothing changes for them.
 
 ## Viewing past conversations
 
