@@ -156,6 +156,35 @@ def test_api_delete_message_returns_404_when_not_found(db):
     assert res.status_code == 404
 
 
+def test_api_update_message(db):
+    session_id = db.create_session("s")
+    db.add_message(session_id, "user", "typo mesage")
+    message_id = db.get_messages(session_id)[0]["id"]
+    client = client_for(db)
+
+    res = client.put(f"/api/messages/{message_id}", json={"content": "fixed message"})
+    assert res.status_code == 200
+    assert db.get_messages(session_id)[0]["content"] == "fixed message"
+
+
+def test_api_update_message_requires_content(db):
+    session_id = db.create_session("s")
+    db.add_message(session_id, "user", "original")
+    message_id = db.get_messages(session_id)[0]["id"]
+    client = client_for(db)
+
+    res = client.put(f"/api/messages/{message_id}", json={"content": "  "})
+    assert res.status_code == 400
+    assert db.get_messages(session_id)[0]["content"] == "original"
+
+
+def test_api_update_message_returns_404_when_not_found(db):
+    client = client_for(db)
+
+    res = client.put("/api/messages/999", json={"content": "hi"})
+    assert res.status_code == 404
+
+
 def test_api_session_creates_one_when_none_exists(db):
     client = client_for(db)
 

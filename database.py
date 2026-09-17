@@ -305,5 +305,24 @@ def delete_message(message_id):
         conn.close()
 
 
+def update_message(message_id, content):
+    """Edits a single message's text in place - e.g. to fix a typo or steer
+    a character's reply without deleting and resending. Returns True if a
+    row was actually updated, False if no message had that id."""
+    conn = get_connection()
+    try:
+        cursor = conn.cursor()
+        cursor.execute(
+            "UPDATE messages SET content = ? WHERE id = ?", (content, message_id)
+        )
+        conn.commit()
+        return cursor.rowcount > 0
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+
+
 if __name__ == "__main__":
     init_db()

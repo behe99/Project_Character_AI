@@ -9,7 +9,7 @@ from flask import Flask, jsonify, request, render_template, Response, stream_wit
 from database import (
     init_db, get_all_characters, get_session_characters, set_session_characters,
     get_last_session, create_session, get_messages, add_character, delete_character,
-    delete_message,
+    delete_message, update_message,
 )
 from seed_characters import seed
 import main
@@ -233,6 +233,19 @@ def api_delete_character(name):
 def api_delete_message(message_id):
     deleted = delete_message(message_id)
     if not deleted:
+        return jsonify({"error": "message not found"}), 404
+    return jsonify({"ok": True})
+
+
+@app.route("/api/messages/<int:message_id>", methods=["PUT"])
+def api_update_message(message_id):
+    data = request.get_json(silent=True) or {}
+    content = (data.get("content") or "").strip()
+    if not content:
+        return jsonify({"error": "content is required"}), 400
+
+    updated = update_message(message_id, content)
+    if not updated:
         return jsonify({"error": "message not found"}), 404
     return jsonify({"ok": True})
 

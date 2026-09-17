@@ -226,6 +226,35 @@ def test_delete_message_returns_false_when_not_found(db):
     assert db.delete_message(999) is False
 
 
+def test_update_message_edits_its_content_and_returns_true(db):
+    session_id = db.create_session("s")
+    db.add_message(session_id, "user", "typo mesage")
+    message_id = db.get_messages(session_id)[0]["id"]
+
+    assert db.update_message(message_id, "fixed message") is True
+
+    messages = db.get_messages(session_id)
+    assert len(messages) == 1
+    assert messages[0]["content"] == "fixed message"
+
+
+def test_update_message_returns_false_when_not_found(db):
+    assert db.update_message(999, "new content") is False
+
+
+def test_update_message_does_not_affect_other_messages(db):
+    session_id = db.create_session("s")
+    db.add_message(session_id, "user", "first")
+    db.add_message(session_id, "user", "second")
+    first_id = db.get_messages(session_id)[0]["id"]
+
+    db.update_message(first_id, "edited first")
+
+    messages = db.get_messages(session_id)
+    assert messages[0]["content"] == "edited first"
+    assert messages[1]["content"] == "second"
+
+
 def test_get_last_session_returns_none_when_empty(db):
     assert db.get_last_session() is None
 
