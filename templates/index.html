@@ -352,7 +352,6 @@ let colorMap = {};
 let characters = [];
 let sessionId = null;
 let eventSource = null;
-let pendingRounds = 0;
 let typingName = null;
 
 const messagesEl = document.getElementById("messages");
@@ -587,18 +586,11 @@ async function loadSession() {
 }
 
 function updateTypingIndicator() {
-  if (typingName) {
-    typingEl.textContent = `${typingName} is typing...`;
-  } else if (pendingRounds > 0) {
-    typingEl.textContent = "Characters are typing...";
-  } else {
-    typingEl.textContent = "";
-  }
+  typingEl.textContent = typingName ? `${typingName} is typing...` : "";
 }
 
 function connectStream(sid) {
   if (eventSource) eventSource.close();
-  pendingRounds = 0;
   typingName = null;
   updateTypingIndicator();
 
@@ -608,6 +600,7 @@ function connectStream(sid) {
     if (event.type === "speaker_picked") {
       // The router picked them, but their line isn't written yet - this
       // fires before the (slower) "reply" event for the same character.
+      // Nothing is shown before this point - there's no one to name yet.
       typingName = event.sender;
       updateTypingIndicator();
     } else if (event.type === "reply") {
@@ -619,7 +612,6 @@ function connectStream(sid) {
       typingName = null;
       updateTypingIndicator();
     } else if (event.type === "round_done") {
-      pendingRounds = Math.max(0, pendingRounds - 1);
       typingName = null;
       updateTypingIndicator();
     }
@@ -713,8 +705,6 @@ async function sendMessage() {
   // one over /api/stream as they're generated.
   appendMessage(null, text, "user");
   inputEl.value = "";
-  pendingRounds += 1;
-  updateTypingIndicator();
 
   try {
     const res = await fetch("/api/message", {
@@ -725,13 +715,9 @@ async function sendMessage() {
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
       appendMessage(null, data.error || "Could not send that message.", "error");
-      pendingRounds = Math.max(0, pendingRounds - 1);
-      updateTypingIndicator();
     }
   } catch (e) {
     appendMessage(null, "Could not reach the server.", "error");
-    pendingRounds = Math.max(0, pendingRounds - 1);
-    updateTypingIndicator();
   }
 }
 
