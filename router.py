@@ -60,10 +60,34 @@ LATEST MESSAGE:
 
 {turn_pressure}
 
-Decide which character(s), if any, would naturally respond to the latest message, based on:
+Decide which character(s), if any, would naturally respond to the latest message.
+
+RULE ONE, ABOVE ALL ELSE: RESPECT DIRECT ADDRESS. Work out who the latest message is
+actually aimed at before considering anything else - a direct question or demand is aimed
+at whoever it's replying to (often the human user), or whoever is named explicitly ("Varys,
+answer me"). When it's clearly aimed at one specific person, everyone else is a bystander
+and should stay silent by default, even if the topic touches their interests too. Only
+include a bystander if they have a strong, specific reason to interrupt - the remark also
+targets them personally, or something they'd be compelled to react to - not general
+relevance. This is the single most common way this goes wrong, so check it explicitly:
+
+- A demand or question aimed at one named character (e.g. "Varys, answer me") should not
+  produce OTHER characters as speakers unless something in the message also targets them.
+- When adding a SECOND character on top of one who's already answering the human user
+  directly, that second character needs their own real reason to speak - not just because
+  the first one is already talking to the user.
+- THIS INCLUDES WHEN THE USER IS THE ONE REPLYING. If a character just asked the user
+  something (any wording - "what brings you here?", "what is it?", "you good?"), the user's
+  next short, direct reply or follow-up - as long as it doesn't name anyone else - belongs to
+  that same character, not to anyone else, even if the question could technically apply to
+  them too. Concretely: if Rollo asks the user "what is it?" and the user replies "who are
+  you?", that question is Rollo's to answer. Tyrion, Ivar, or anyone else jumping in to
+  introduce themselves instead is exactly the mistake to avoid, no matter how plausible it
+  feels that they'd also want to answer.
+
+Beyond direct address, also weigh:
 - Relevance to their triggers/interests
 - Their interrupt_tendency and assertiveness (higher = more likely to jump in)
-- Whether the message is directed at them specifically
 - Natural conversation flow (don't have everyone respond to everything)
 
 PRIORITIZE PERSONAL STAKES. If the message directly hits one character's specific trigger
@@ -89,28 +113,6 @@ DON'T DEFAULT TO THE SAME ONE OR TWO CHARACTERS OUT OF HABIT. Look at the recent
 conversation - if the same pair has been trading lines for several messages in a row,
 that's a sign to either let it end or bring in someone else with a genuine reason to
 speak, not to keep it going between the same two people again.
-
-RESPECT DIRECT ADDRESS. Work out who the latest message is actually aimed at - a direct
-question or demand is usually addressed to whoever it's replying to (often the human
-user), or to whoever is named explicitly ("Varys, answer me"). When the message is
-clearly aimed at one specific person, everyone else is a bystander and should generally
-stay silent, even if the topic touches their interests too. Only include a bystander in
-this case if they have a strong, specific reason to interrupt - the remark also targets
-them personally, or it's something they'd be compelled to react to - not just general
-relevance. A demand directed at "Varys" should not produce other characters as speakers
-unless something in the message also targets them specifically. This also applies when
-you're picking a SECOND character to react to the human user's own message: if you're
-about to add someone else on top of a speaker who's already answering the user directly,
-make sure that second character has their own real reason to speak, not just because the
-first one is already talking to the user.
-
-THIS INCLUDES WHEN THE USER IS THE ONE REPLYING. If a character just asked the human user
-something directly, and the user's next message is a short, direct reply or follow-up
-question that doesn't name anyone else, that's still a one-on-one exchange with that
-specific character - not an opening for someone else to answer instead or in addition, even
-if the question could technically apply to them too. Example of the mistake: a character
-asks the user "what brings you here?", the user replies "who are you?" - only the character
-who asked should answer that, not some other character jumping in to introduce themselves.
 
 Choose AT MOST 2 characters. It's okay, and often correct, to choose 0.
 
