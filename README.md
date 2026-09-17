@@ -1,14 +1,17 @@
 # Character AI Chatroom
 
-A group chat where fictional characters (currently a Game of Thrones cast)
-respond to a human user and to each other, powered by Gemini.
+A group chat where fictional characters respond to a human user and to each
+other, powered by Gemini. Ships with 45 characters across three shows: Game
+of Thrones, Vikings, and The Walking Dead.
 
 - `database.py` — SQLite persistence for characters, sessions, and messages.
 - `router.py` — decides which character(s), if any, should respond to the latest message.
 - `character_response.py` — generates an in-character reply for a chosen speaker.
 - `llm.py` — shared Gemini client/model call with retry logic.
-- `seed_characters.py` — seeds the database with the character roster.
-- `create_character.py` — interactively add your own character.
+- `seed_characters.py` — seeds the database with the full character roster.
+- `shows/` — one module per show (`got` characters live in `seed_characters.py`
+  itself; `vikings.py` and `walking_dead.py` are separate modules combined in).
+- `create_character.py` — interactively add your own character, from any show.
 - `main.py` — interactive terminal chat loop.
 - `app.py` — Flask web UI, built on the same `run_conversation_turn()` as main.py.
 - `history.py` — list and view past conversations.
@@ -64,6 +67,12 @@ who's in that specific conversation; leaving everyone selected (or just
 pressing enter in the terminal) keeps the old "everyone's in the room"
 behavior. Conversations created before this feature, or where nobody
 picked a subset, still include every character - nothing changes for them.
+
+**With 45 characters spanning three different shows now, "everyone's in
+the room" means Ragnar Lothbrok, Rick Grimes, and Tyrion Lannister are all
+in the same conversation by default.** That can be fun as a novelty, but
+for a focused, coherent conversation, pick just one show's cast when you
+start a new conversation instead of leaving everyone checked.
 
 ## Viewing past conversations
 
