@@ -23,6 +23,7 @@ def test_api_create_character(db):
 
     res = client.post("/api/characters", json={
         "name": "Melisandre",
+        "show": "Game of Thrones",
         "personality": "A red priestess obsessed with fire and prophecy.",
         "speech_style": "Mystical, short declarations.",
         "world_context": "Medieval fantasy, no modern technology.",
@@ -36,8 +37,27 @@ def test_api_create_character(db):
     characters = db.get_all_characters()
     assert len(characters) == 1
     assert characters[0]["name"] == "Melisandre"
+    assert characters[0]["show"] == "Game of Thrones"
     assert characters[0]["interrupt_tendency"] == "high"
     assert characters[0]["assertiveness"] == "medium"  # default
+
+
+def test_api_create_character_without_show_defaults_to_custom(db):
+    client = client_for(db)
+
+    res = client.post("/api/characters", json={
+        "name": "X", "personality": "p", "speech_style": "s", "world_context": "w",
+    })
+    assert res.status_code == 201
+    assert db.get_all_characters()[0]["show"] == "Custom"
+
+
+def test_api_characters_includes_show(db):
+    db.add_character(**dict(ONE_CHARACTER, show="Vikings"))
+    client = client_for(db)
+
+    res = client.get("/api/characters")
+    assert res.get_json()[0]["show"] == "Vikings"
 
 
 def test_api_create_character_requires_core_fields(db):

@@ -635,6 +635,13 @@ CHARACTERS = [
     ),
 ]
 
+for c in CHARACTERS:
+    c.setdefault("show", "Game of Thrones")
+for c in vikings.CHARACTERS:
+    c.setdefault("show", "Vikings")
+for c in walking_dead.CHARACTERS:
+    c.setdefault("show", "The Walking Dead")
+
 CHARACTERS = CHARACTERS + vikings.CHARACTERS + walking_dead.CHARACTERS
 
 

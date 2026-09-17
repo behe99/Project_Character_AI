@@ -33,8 +33,10 @@ python main.py
 Type a message and press enter. In-chat commands:
 - `quit` — exit
 - `new` — start a fresh conversation; lets you pick which characters are in
-  it (press enter to include everyone)
-- `characters` — list every character in the database
+  it. Characters are listed grouped by show, numbered continuously - type
+  comma-separated numbers, type a show's name (e.g. `Vikings`) to grab that
+  whole cast at once, or press enter for everyone
+- `characters` — list every character in the database, grouped by show
 - `roster` — list who's actually in the current conversation
 
 Running `main.py` again resumes your most recent conversation instead of
@@ -56,6 +58,14 @@ are visible in the other (and in `history.py`) since they all share
 Click "Manage Characters" to add a new character (same fields as
 `create_character.py`, in a form) or remove an existing one, right from the
 browser - no separate script needed.
+
+Both "Manage Characters" and the "New Conversation" picker group characters
+by show instead of one long list - so with 45+ characters you can jump
+straight to "Vikings" or "The Walking Dead" instead of scanning everything.
+Each group in the picker has its own "all"/"none" links alongside the
+global "Select all"/"Select none". When adding a character, fill in the
+"Show/universe" field with an existing show's name to group them with it,
+or type a new one (leave it blank and they land under "Custom").
 
 ## Per-conversation casts
 
@@ -87,10 +97,13 @@ python history.py 2        # show the full transcript of session 2
 python create_character.py
 ```
 
-Walks you through personality, speech style, world/setting, backstory,
-sample lines, relationships, triggers, and how likely they are to jump
-into a conversation. Running it again with an existing character's name
-overwrites their details instead of duplicating them.
+Walks you through their show/universe, personality, speech style,
+world/setting, backstory, sample lines, relationships, triggers, and how
+likely they are to jump into a conversation. Running it again with an
+existing character's name overwrites their details instead of duplicating
+them. Reuse an existing show's name (it lists what's already in the
+database) to group a new character with that cast in the picker, or type a
+new one for a show that isn't seeded yet.
 
 When answering "one per line, blank line to finish" prompts (sample lines,
 relationships), don't add extra blank lines for readability - a blank line

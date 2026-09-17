@@ -211,6 +211,23 @@
     cursor: pointer;
     padding: 0;
   }
+  .group-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 14px 0 4px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid var(--border);
+  }
+  .group-header:first-child { margin-top: 0; }
+  .group-header .group-title {
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--muted);
+  }
+  .group-header .group-actions { display: flex; gap: 8px; }
   #start-session-btn {
     background: var(--accent);
     color: white;
@@ -264,6 +281,10 @@
       <form id="char-form">
         <label>Name</label>
         <input id="f-name" type="text" required>
+
+        <label>Show/universe (groups them in the picker - pick an existing one or type your own)</label>
+        <input id="f-show" type="text" list="show-options" placeholder="Game of Thrones, Vikings, The Walking Dead, or your own">
+        <datalist id="show-options"></datalist>
 
         <label>Personality (cover multiple sides of them, not just one famous trait)</label>
         <textarea id="f-personality" rows="3" placeholder="Their core traits AND their humor, warmth, insecurities, quiet moments..." required></textarea>
@@ -341,8 +362,26 @@ const pickAllBtn = document.getElementById("pick-all-btn");
 const pickNoneBtn = document.getElementById("pick-none-btn");
 const startSessionBtn = document.getElementById("start-session-btn");
 
+const SHOW_ORDER = ["Game of Thrones", "Vikings", "The Walking Dead"];
+
 function colorFor(name) {
   return colorMap[name] || "#ffffff";
+}
+
+function groupByShow(chars) {
+  const groups = {};
+  chars.forEach(c => {
+    const show = c.show || "Custom";
+    if (!groups[show]) groups[show] = [];
+    groups[show].push(c);
+  });
+  const shows = Object.keys(groups).sort((a, b) => {
+    const ia = SHOW_ORDER.indexOf(a);
+    const ib = SHOW_ORDER.indexOf(b);
+    if (ia !== -1 || ib !== -1) return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
+    return a.localeCompare(b);
+  });
+  return shows.map(show => ({ show, chars: groups[show] }));
 }
 
 function appendMessage(sender, content, kind) {
@@ -371,6 +410,13 @@ async function loadCharacters() {
     colorMap[c.name] = COLOR_PALETTE[i % COLOR_PALETTE.length];
   });
   renderCharList();
+  renderShowOptions();
+}
+
+function renderShowOptions() {
+  const shows = [...new Set(characters.map(c => c.show || "Custom"))];
+  const datalist = document.getElementById("show-options");
+  datalist.innerHTML = shows.map(s => `<option value="${s}"></option>`).join("");
 }
 
 function renderRosterBar(names) {
@@ -389,17 +435,24 @@ function renderCharList() {
     charListEl.innerHTML = '<p style="color:var(--muted); font-size:13px;">No characters yet.</p>';
     return;
   }
-  characters.forEach(c => {
-    const row = document.createElement("div");
-    row.className = "char-row";
-    row.innerHTML = `
-      <div class="left">
-        <span class="dot" style="background:${colorFor(c.name)}"></span>
-        <span>${c.name}</span>
-      </div>
-      <button class="remove-btn" data-name="${c.name}">Remove</button>
-    `;
-    charListEl.appendChild(row);
+  groupByShow(characters).forEach(({ show, chars }) => {
+    const header = document.createElement("div");
+    header.className = "group-header";
+    header.innerHTML = `<span class="group-title">${show} (${chars.length})</span>`;
+    charListEl.appendChild(header);
+
+    chars.forEach(c => {
+      const row = document.createElement("div");
+      row.className = "char-row";
+      row.innerHTML = `
+        <div class="left">
+          <span class="dot" style="background:${colorFor(c.name)}"></span>
+          <span>${c.name}</span>
+        </div>
+        <button class="remove-btn" data-name="${c.name}">Remove</button>
+      `;
+      charListEl.appendChild(row);
+    });
   });
   charListEl.querySelectorAll(".remove-btn").forEach(btn => {
     btn.addEventListener("click", () => removeCharacter(btn.dataset.name));
@@ -439,6 +492,7 @@ async function submitNewCharacter(e) {
 
   const payload = {
     name: document.getElementById("f-name").value.trim(),
+    show: document.getElementById("f-show").value.trim(),
     personality: document.getElementById("f-personality").value.trim(),
     speech_style: document.getElementById("f-speech-style").value.trim(),
     world_context: document.getElementById("f-world-context").value.trim(),
@@ -489,16 +543,43 @@ async function loadSession() {
 
 function renderPickList() {
   pickListEl.innerHTML = "";
-  characters.forEach(c => {
-    const row = document.createElement("label");
-    row.className = "pick-row";
-    row.innerHTML = `
-      <input type="checkbox" class="pick-checkbox" value="${c.name}" checked>
-      <span class="dot" style="background:${colorFor(c.name)}"></span>
-      <span>${c.name}</span>
+  groupByShow(characters).forEach(({ show, chars }) => {
+    const header = document.createElement("div");
+    header.className = "group-header";
+    const safeShow = show.replace(/"/g, "&quot;");
+    header.innerHTML = `
+      <span class="group-title">${show} (${chars.length})</span>
+      <span class="group-actions">
+        <button type="button" class="link-btn group-all-btn" data-show="${safeShow}">all</button>
+        <button type="button" class="link-btn group-none-btn" data-show="${safeShow}">none</button>
+      </span>
     `;
-    pickListEl.appendChild(row);
+    pickListEl.appendChild(header);
+
+    chars.forEach(c => {
+      const row = document.createElement("label");
+      row.className = "pick-row";
+      row.dataset.show = show;
+      row.innerHTML = `
+        <input type="checkbox" class="pick-checkbox" value="${c.name}" checked>
+        <span class="dot" style="background:${colorFor(c.name)}"></span>
+        <span>${c.name}</span>
+      `;
+      pickListEl.appendChild(row);
+    });
   });
+
+  pickListEl.querySelectorAll(".group-all-btn").forEach(btn => {
+    btn.addEventListener("click", () => setGroupChecked(btn.dataset.show, true));
+  });
+  pickListEl.querySelectorAll(".group-none-btn").forEach(btn => {
+    btn.addEventListener("click", () => setGroupChecked(btn.dataset.show, false));
+  });
+}
+
+function setGroupChecked(show, checked) {
+  pickListEl.querySelectorAll(`.pick-row[data-show="${CSS.escape(show)}"] .pick-checkbox`)
+    .forEach(cb => cb.checked = checked);
 }
 
 function openNewSessionModal() {

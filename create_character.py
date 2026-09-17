@@ -50,7 +50,9 @@ def prompt_relationships():
 
 def create_character():
     init_db()
-    existing_names = {c["name"] for c in get_all_characters()}
+    existing = get_all_characters()
+    existing_names = {c["name"] for c in existing}
+    existing_shows = sorted({c.get("show") or "Custom" for c in existing})
 
     print("Create a new character. Press Ctrl+C at any point to cancel.\n")
 
@@ -58,6 +60,13 @@ def create_character():
     is_update = name in existing_names
     if is_update:
         print(f"'{name}' already exists - this will overwrite their details.\n")
+
+    shows_hint = f" (existing: {', '.join(existing_shows)})" if existing_shows else ""
+    show = prompt(
+        f"Show/universe they're from{shows_hint} - reuse an existing name so they "
+        "group together in the picker, or type a new one",
+        required=False,
+    ) or "Custom"
 
     personality = prompt(
         "Personality - describe MULTIPLE distinct sides of them, not just their most "
@@ -102,6 +111,7 @@ def create_character():
 
     character = dict(
         name=name,
+        show=show,
         personality=personality,
         speech_style=speech_style,
         world_context=world_context,

@@ -34,7 +34,12 @@ def index():
 def api_characters():
     characters = sorted(get_all_characters(), key=lambda c: c["id"])
     return jsonify([
-        {"id": c["id"], "name": c["name"], "personality": c["personality"]}
+        {
+            "id": c["id"],
+            "name": c["name"],
+            "personality": c["personality"],
+            "show": c["show"] or "Custom",
+        }
         for c in characters
     ])
 
@@ -64,6 +69,7 @@ def api_create_character():
             triggers=data.get("triggers") or [],
             interrupt_tendency=data.get("interrupt_tendency") or "medium",
             assertiveness=data.get("assertiveness") or "medium",
+            show=(data.get("show") or "Custom").strip() or "Custom",
         )
     except sqlite3.IntegrityError:
         return jsonify({"error": f"'{name}' already exists"}), 409

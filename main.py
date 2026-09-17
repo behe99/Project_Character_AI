@@ -73,15 +73,34 @@ def run_conversation_turn(session_id, user_message):
     return replies
 
 
+SHOW_ORDER = ["Game of Thrones", "Vikings", "The Walking Dead"]
+
+
+def group_by_show(characters):
+    """Groups characters by their show, GoT/Vikings/TWD first in that order,
+    then any other shows alphabetically - so a long roster reads as
+    sections instead of one flat list."""
+    groups = {}
+    for c in characters:
+        groups.setdefault(c.get("show") or "Custom", []).append(c)
+
+    def sort_key(show):
+        return (SHOW_ORDER.index(show), show) if show in SHOW_ORDER else (len(SHOW_ORDER), show)
+
+    return [(show, groups[show]) for show in sorted(groups, key=sort_key)]
+
+
 def list_characters(color_map):
     characters = sorted(get_all_characters(), key=lambda c: c["id"])
     if not characters:
         print("No characters in the roster.")
         return
-    for c in characters:
-        color = color_map.get(c["name"], Fore.WHITE)
-        snippet = c["personality"].split(".")[0].strip()
-        print(f"{color}{c['name']}{Style.RESET_ALL} - {snippet}")
+    for show, group in group_by_show(characters):
+        print(f"-- {show} --")
+        for c in group:
+            color = color_map.get(c["name"], Fore.WHITE)
+            snippet = c["personality"].split(".")[0].strip()
+            print(f"{color}{c['name']}{Style.RESET_ALL} - {snippet}")
 
 
 def list_session_characters(session_id, color_map):
@@ -94,22 +113,35 @@ def list_session_characters(session_id, color_map):
 def choose_characters_cli():
     """Lets the user pick a subset of characters for a new conversation.
     Pressing enter with no input, or nothing valid getting picked, means
-    everyone - the same default a fresh session already has."""
+    everyone - the same default a fresh session already has. Numbers keep
+    counting up across show sections, and typing a show's name instead
+    (e.g. "Vikings") picks that whole cast without reading every number."""
     characters = sorted(get_all_characters(), key=lambda c: c["id"])
-    print("Choose characters for this conversation (comma-separated numbers, "
-          "or press enter for everyone):")
-    for i, c in enumerate(characters, start=1):
-        print(f"  {i}. {c['name']}")
+    grouped = group_by_show(characters)
+
+    print("Choose characters for this conversation - comma-separated numbers, "
+          "a show name to pick that whole cast (e.g. \"Vikings\"), "
+          "or press enter for everyone:")
+    numbered = []
+    for show, group in grouped:
+        print(f"-- {show} --")
+        for c in group:
+            numbered.append(c)
+            print(f"  {len(numbered)}. {c['name']}")
 
     raw = input("> ").strip()
     if not raw:
         return [c["name"] for c in characters]
 
+    show_names = {show.lower(): group for show, group in grouped}
+    if raw.lower() in show_names:
+        return [c["name"] for c in show_names[raw.lower()]]
+
     selected = []
     for part in raw.split(","):
         part = part.strip()
-        if part.isdigit() and 1 <= int(part) <= len(characters):
-            selected.append(characters[int(part) - 1]["name"])
+        if part.isdigit() and 1 <= int(part) <= len(numbered):
+            selected.append(numbered[int(part) - 1]["name"])
 
     return selected or [c["name"] for c in characters]
 

@@ -95,6 +95,28 @@ def test_choose_characters_cli_garbage_input_means_everyone(db, monkeypatch):
     assert main.choose_characters_cli() == ["Test Character"]
 
 
+def test_choose_characters_cli_accepts_a_show_name(db, monkeypatch):
+    db.add_character(**dict(ONE_CHARACTER, name="Ragnar", show="Vikings"))
+    db.add_character(**dict(ONE_CHARACTER, name="Lagertha", show="Vikings"))
+    db.add_character(**dict(ONE_CHARACTER, name="Rick", show="The Walking Dead"))
+
+    monkeypatch.setattr("builtins.input", lambda prompt="": "Vikings")
+
+    assert set(main.choose_characters_cli()) == {"Ragnar", "Lagertha"}
+
+
+def test_group_by_show_orders_known_shows_first(db):
+    db.add_character(**dict(ONE_CHARACTER, name="Rick", show="The Walking Dead"))
+    db.add_character(**dict(ONE_CHARACTER, name="Homemade Hero", show="Custom"))
+    db.add_character(**dict(ONE_CHARACTER, name="Tyrion", show="Game of Thrones"))
+
+    characters = sorted(db.get_all_characters(), key=lambda c: c["id"])
+    shows = [show for show, _ in main.group_by_show(characters)]
+
+    assert shows.index("Game of Thrones") < shows.index("The Walking Dead")
+    assert "Custom" in shows
+
+
 def test_start_new_session_cli_scopes_the_new_session(db, monkeypatch):
     db.add_character(**ONE_CHARACTER)
     db.add_character(**dict(ONE_CHARACTER, name="Other Character"))
