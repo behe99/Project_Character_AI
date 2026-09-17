@@ -104,6 +104,14 @@ about to add someone else on top of a speaker who's already answering the user d
 make sure that second character has their own real reason to speak, not just because the
 first one is already talking to the user.
 
+THIS INCLUDES WHEN THE USER IS THE ONE REPLYING. If a character just asked the human user
+something directly, and the user's next message is a short, direct reply or follow-up
+question that doesn't name anyone else, that's still a one-on-one exchange with that
+specific character - not an opening for someone else to answer instead or in addition, even
+if the question could technically apply to them too. Example of the mistake: a character
+asks the user "what brings you here?", the user replies "who are you?" - only the character
+who asked should answer that, not some other character jumping in to introduce themselves.
+
 Choose AT MOST 2 characters. It's okay, and often correct, to choose 0.
 
 Respond with ONLY valid JSON in this exact format, no other text:
