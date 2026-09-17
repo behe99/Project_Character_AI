@@ -1,15 +1,86 @@
+import json
+import queue
 import sqlite3
+import threading
 
-from flask import Flask, jsonify, request, render_template
+from flask import Flask, jsonify, request, render_template, Response, stream_with_context
 
 from database import (
     init_db, get_all_characters, get_session_characters, set_session_characters,
     get_last_session, create_session, get_messages, add_character, delete_character,
 )
 from seed_characters import seed
-from main import run_conversation_turn
+from main import run_conversation_turn_stream
 
 app = Flask(__name__)
+
+# Each session gets its own FIFO queue of pending user messages and its own
+# background worker thread that processes them one at a time. This is what
+# lets someone send a second message while characters are still replying to
+# the first: it's queued immediately (and shown in their own browser right
+# away) instead of blocking, but the worker only starts generating replies
+# for it once the in-progress round has fully finished - so an interruption
+# never garbles a round that's already underway. Every reply the worker
+# generates is pushed to that session's subscribers (open /api/stream
+# connections) as soon as it's ready, so the browser can render them one by
+# one instead of waiting for the whole round.
+_lock = threading.Lock()
+_session_queues = {}
+_session_subscribers = {}
+_workers_started = set()
+
+
+def _get_queue(session_id):
+    with _lock:
+        if session_id not in _session_queues:
+            _session_queues[session_id] = queue.Queue()
+        return _session_queues[session_id]
+
+
+def _broadcast(session_id, event):
+    with _lock:
+        subscribers = list(_session_subscribers.get(session_id, []))
+    for subscriber_queue in subscribers:
+        subscriber_queue.put(event)
+
+
+def _subscribe(session_id):
+    subscriber_queue = queue.Queue()
+    with _lock:
+        _session_subscribers.setdefault(session_id, []).append(subscriber_queue)
+    return subscriber_queue
+
+
+def _unsubscribe(session_id, subscriber_queue):
+    with _lock:
+        subscribers = _session_subscribers.get(session_id, [])
+        if subscriber_queue in subscribers:
+            subscribers.remove(subscriber_queue)
+
+
+def _process_one_message(session_id, user_message):
+    try:
+        for name, reply in run_conversation_turn_stream(session_id, user_message):
+            _broadcast(session_id, {"type": "reply", "sender": name, "content": reply})
+    except (RuntimeError, ValueError) as e:
+        _broadcast(session_id, {"type": "error", "message": str(e)})
+    _broadcast(session_id, {"type": "round_done"})
+
+
+def _worker_loop(session_id):
+    session_queue = _get_queue(session_id)
+    while True:
+        user_message = session_queue.get()
+        _process_one_message(session_id, user_message)
+
+
+def _ensure_worker(session_id):
+    with _lock:
+        if session_id in _workers_started:
+            return
+        _workers_started.add(session_id)
+    thread = threading.Thread(target=_worker_loop, args=(session_id,), daemon=True)
+    thread.start()
 
 
 def ensure_ready():
@@ -118,16 +189,32 @@ def api_message():
     if not session_id or not user_message:
         return jsonify({"error": "session_id and message are required"}), 400
 
-    try:
-        replies = run_conversation_turn(session_id, user_message)
-    except (RuntimeError, ValueError) as e:
-        return jsonify({"error": str(e)})
+    _ensure_worker(session_id)
+    _get_queue(session_id).put(user_message)
 
-    return jsonify({
-        "replies": [{"sender": name, "content": reply} for name, reply in replies]
-    })
+    return jsonify({"queued": True}), 202
+
+
+@app.route("/api/stream/<int:session_id>")
+def api_stream(session_id):
+    """Server-sent events: each character reply for this session is pushed
+    here as soon as it's generated, so the browser can render replies one by
+    one instead of waiting for a whole round to finish."""
+    def events():
+        subscriber_queue = _subscribe(session_id)
+        try:
+            while True:
+                try:
+                    event = subscriber_queue.get(timeout=20)
+                    yield f"data: {json.dumps(event)}\n\n"
+                except queue.Empty:
+                    yield ": keep-alive\n\n"
+        finally:
+            _unsubscribe(session_id, subscriber_queue)
+
+    return Response(stream_with_context(events()), mimetype="text/event-stream")
 
 
 if __name__ == "__main__":
     ensure_ready()
-    app.run(debug=True, port=5000)
+    app.run(debug=True, port=5000, threaded=True)

@@ -351,6 +351,8 @@ const COLOR_PALETTE = [
 let colorMap = {};
 let characters = [];
 let sessionId = null;
+let eventSource = null;
+let pendingRounds = 0;
 
 const messagesEl = document.getElementById("messages");
 const rosterEl = document.getElementById("roster");
@@ -580,6 +582,30 @@ async function loadSession() {
   data.messages.forEach(m => {
     appendMessage(m.sender, m.content, m.sender === "user" ? "user" : "character");
   });
+  connectStream(sessionId);
+}
+
+function updateTypingIndicator() {
+  typingEl.textContent = pendingRounds > 0 ? "Characters are typing..." : "";
+}
+
+function connectStream(sid) {
+  if (eventSource) eventSource.close();
+  pendingRounds = 0;
+  updateTypingIndicator();
+
+  eventSource = new EventSource(`/api/stream/${sid}`);
+  eventSource.onmessage = e => {
+    const event = JSON.parse(e.data);
+    if (event.type === "reply") {
+      appendMessage(event.sender, event.content, "character");
+    } else if (event.type === "error") {
+      appendMessage(null, event.message, "error");
+    } else if (event.type === "round_done") {
+      pendingRounds = Math.max(0, pendingRounds - 1);
+      updateTypingIndicator();
+    }
+  };
 }
 
 function renderPickList() {
@@ -654,6 +680,7 @@ async function startNewSession() {
   sessionId = data.session_id;
   renderRosterBar(selected.length ? selected : characters.map(c => c.name));
   messagesEl.innerHTML = "";
+  connectStream(sessionId);
   closeNewSessionModal();
   inputEl.focus();
 }
@@ -662,11 +689,14 @@ async function sendMessage() {
   const text = inputEl.value.trim();
   if (!text) return;
 
+  // Shown right away and sent without waiting for anyone's reply, so you
+  // can keep sending messages while characters are still answering earlier
+  // ones - each is queued and processed in order, replies stream in one by
+  // one over /api/stream as they're generated.
   appendMessage(null, text, "user");
   inputEl.value = "";
-  inputEl.disabled = true;
-  sendBtn.disabled = true;
-  typingEl.textContent = "Characters are typing...";
+  pendingRounds += 1;
+  updateTypingIndicator();
 
   try {
     const res = await fetch("/api/message", {
@@ -674,19 +704,16 @@ async function sendMessage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ session_id: sessionId, message: text }),
     });
-    const data = await res.json();
-    if (data.error) {
-      appendMessage(null, data.error, "error");
-    } else {
-      data.replies.forEach(r => appendMessage(r.sender, r.content, "character"));
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      appendMessage(null, data.error || "Could not send that message.", "error");
+      pendingRounds = Math.max(0, pendingRounds - 1);
+      updateTypingIndicator();
     }
   } catch (e) {
     appendMessage(null, "Could not reach the server.", "error");
-  } finally {
-    typingEl.textContent = "";
-    inputEl.disabled = false;
-    sendBtn.disabled = false;
-    inputEl.focus();
+    pendingRounds = Math.max(0, pendingRounds - 1);
+    updateTypingIndicator();
   }
 }
 

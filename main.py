@@ -34,19 +34,17 @@ def print_character_line(name, reply, color_map):
     print(f"{color}{name}:{Style.RESET_ALL} {reply}")
 
 
-def run_conversation_turn(session_id, user_message):
-    """Lets characters react to the user, then to each other, for a few rounds
-    before handing control back to the user. The user's own message always gets
-    at least one reply; character-to-character chains can still end at 0.
-    Returns the generated replies as a list of (character_name, reply) tuples,
-    in the order they were generated - callers decide how to display them."""
+def run_conversation_turn_stream(session_id, user_message):
+    """Same logic as run_conversation_turn, but yields each (character_name,
+    reply) tuple as soon as it's generated instead of collecting them all
+    first - so a caller can display or broadcast replies one at a time as
+    they come in, rather than waiting for the whole round to finish."""
     add_message(session_id, "user", user_message)
 
     latest_message = user_message
     last_speaker = None
     turns_used = 0
     is_first_round = True
-    replies = []
 
     while turns_used < MAX_CHARACTER_TURNS_PER_MESSAGE:
         speakers = decide_speakers(session_id, latest_message, exclude=last_speaker)
@@ -63,14 +61,23 @@ def run_conversation_turn(session_id, user_message):
             if turns_used >= MAX_CHARACTER_TURNS_PER_MESSAGE:
                 break
             reply = generate_character_reply(session_id, name)
-            replies.append((name, reply))
+            yield name, reply
             latest_message = reply
             last_speaker = name
             turns_used += 1
 
         is_first_round = False
 
-    return replies
+
+def run_conversation_turn(session_id, user_message):
+    """Lets characters react to the user, then to each other, for a few rounds
+    before handing control back to the user. The user's own message always gets
+    at least one reply; character-to-character chains can still end at 0.
+    Returns the generated replies as a list of (character_name, reply) tuples,
+    in the order they were generated - callers decide how to display them.
+    Prefer run_conversation_turn_stream() directly if you can display replies
+    as they arrive instead of waiting for the whole list."""
+    return list(run_conversation_turn_stream(session_id, user_message))
 
 
 SHOW_ORDER = ["Game of Thrones", "Vikings", "The Walking Dead"]
@@ -207,8 +214,7 @@ def main():
             continue
 
         try:
-            replies = run_conversation_turn(session_id, user_message)
-            for name, reply in replies:
+            for name, reply in run_conversation_turn_stream(session_id, user_message):
                 print_character_line(name, reply, color_map)
         except (RuntimeError, ValueError) as e:
             print(f"(something went wrong generating a reply, try again: {e})")

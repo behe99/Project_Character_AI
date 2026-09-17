@@ -51,9 +51,18 @@ python app.py
 Opens a Flask server at http://127.0.0.1:5000 with a browser chat interface:
 colored character names, a roster legend for the current conversation, and
 a "New Conversation" button. Uses the same database and the same
-`run_conversation_turn()` logic as `main.py` - conversations started in one
-are visible in the other (and in `history.py`) since they all share
+`run_conversation_turn_stream()` logic as `main.py` - conversations started
+in one are visible in the other (and in `history.py`) since they all share
 `chatroom.db`.
+
+Replies stream in one at a time as each character finishes "typing," instead
+of waiting for the whole round to land at once - and you're never locked out
+of the input while that's happening. Send another message right away and
+it's queued: characters finish replying to what's already in flight first,
+then move on to your new message next, so an interruption never garbles a
+reply that was already underway. Every message - including ones sent while
+others were still being answered - stays in the same conversation history,
+so characters can refer back to anything said earlier, interruption or not.
 
 Click "Manage Characters" to add a new character (same fields as
 `create_character.py`, in a form) or remove an existing one, right from the

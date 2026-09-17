@@ -15,6 +15,38 @@ def test_guarantees_at_least_one_reply_on_first_round(db, monkeypatch):
     assert [name for name, _ in replies] == ["Test Character"]
 
 
+def test_run_conversation_turn_stream_yields_before_the_round_finishes(db, monkeypatch):
+    """The whole point of the streaming version is that a caller can act on
+    the first reply without waiting for the rest - verified here by reading
+    only one item from the generator and confirming the second reply hasn't
+    been generated yet."""
+    other = dict(ONE_CHARACTER, name="Other Character")
+    db.add_character(**ONE_CHARACTER)
+    db.add_character(**other)
+    session_id = db.create_session("s")
+
+    generated = []
+
+    def fake_generate_character_reply(sid, name):
+        generated.append(name)
+        return "a reply"
+
+    monkeypatch.setattr(
+        main, "decide_speakers",
+        lambda *a, **k: ["Test Character", "Other Character"]
+    )
+    monkeypatch.setattr(main, "generate_character_reply", fake_generate_character_reply)
+
+    gen = main.run_conversation_turn_stream(session_id, "hello")
+    first = next(gen)
+
+    assert first == ("Test Character", "a reply")
+    assert generated == ["Test Character"]  # the second reply isn't generated yet
+
+    second = next(gen)
+    assert second == ("Other Character", "a reply")
+
+
 def test_no_fallback_reply_on_later_rounds(db, monkeypatch):
     """The guaranteed-reply fallback only applies to the user's own message,
     not to character-to-character rounds that legitimately end at 0."""

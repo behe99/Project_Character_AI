@@ -1,6 +1,10 @@
+import queue
+import time
+
 from conftest import ONE_CHARACTER
 
 import app as flask_app
+import main
 
 
 def client_for(db):
@@ -164,19 +168,6 @@ def test_api_session_reports_the_scoped_roster(db):
     assert res.get_json()["characters"] == ["Test Character"]
 
 
-def test_api_message_returns_replies(db, monkeypatch):
-    db.add_character(**ONE_CHARACTER)
-    session_id = db.create_session("s")
-    client = client_for(db)
-
-    monkeypatch.setattr(flask_app, "run_conversation_turn",
-                         lambda sid, msg: [("Test Character", "a reply")])
-
-    res = client.post("/api/message", json={"session_id": session_id, "message": "hi"})
-    assert res.status_code == 200
-    assert res.get_json() == {"replies": [{"sender": "Test Character", "content": "a reply"}]}
-
-
 def test_api_message_requires_session_id_and_message(db):
     client = client_for(db)
 
@@ -187,19 +178,112 @@ def test_api_message_requires_session_id_and_message(db):
     assert res.status_code == 400
 
 
-def test_api_message_surfaces_model_failure_as_error_not_500(db, monkeypatch):
+def test_api_message_queues_instead_of_blocking(db, monkeypatch):
+    """/api/message hands the message to a background worker and returns
+    immediately - replies arrive later over /api/stream, not in this
+    response - so sending a second message never has to wait for the first
+    round to finish generating."""
     db.add_character(**ONE_CHARACTER)
     session_id = db.create_session("s")
     client = client_for(db)
 
-    def fake_run_conversation_turn(sid, msg):
-        raise RuntimeError("model failed after 3 attempts.")
+    call_count = {"n": 0}
 
-    monkeypatch.setattr(flask_app, "run_conversation_turn", fake_run_conversation_turn)
+    def fake_decide_speakers(session_id, latest_message, exclude=None):
+        call_count["n"] += 1
+        return ["Test Character"] if call_count["n"] == 1 else []
+
+    monkeypatch.setattr(main, "decide_speakers", fake_decide_speakers)
+    monkeypatch.setattr(main, "generate_character_reply", lambda sid, name: "a reply")
+
+    # Subscribe before posting so we don't miss the broadcast.
+    subscriber = flask_app._subscribe(session_id)
 
     res = client.post("/api/message", json={"session_id": session_id, "message": "hi"})
-    assert res.status_code == 200
-    assert res.get_json() == {"error": "model failed after 3 attempts."}
+    assert res.status_code == 202
+    assert res.get_json() == {"queued": True}
+
+    # The real background worker thread processes the queue asynchronously;
+    # poll briefly instead of assuming it already ran by the time we check.
+    deadline = time.time() + 2
+    events = []
+    while time.time() < deadline and not any(e.get("type") == "round_done" for e in events):
+        try:
+            events.append(subscriber.get(timeout=0.05))
+        except queue.Empty:
+            pass
+
+    assert {"type": "reply", "sender": "Test Character", "content": "a reply"} in events
+    # The user's own message is written to the DB by the worker itself, once
+    # it actually starts processing - not by the request thread.
+    assert [m["sender"] for m in db.get_messages(session_id)] == ["user"]
+
+
+def test_process_one_message_broadcasts_replies_then_round_done(db, monkeypatch):
+    """_process_one_message is the synchronous unit the worker thread calls
+    per queued message - tested directly (no thread, no timing) so the
+    broadcast sequence is deterministic."""
+    db.add_character(**ONE_CHARACTER)
+    session_id = db.create_session("s")
+
+    call_count = {"n": 0}
+
+    def fake_decide_speakers(session_id, latest_message, exclude=None):
+        call_count["n"] += 1
+        return ["Test Character"] if call_count["n"] == 1 else []
+
+    monkeypatch.setattr(main, "decide_speakers", fake_decide_speakers)
+    monkeypatch.setattr(main, "generate_character_reply", lambda sid, name: "a reply")
+
+    subscriber = flask_app._subscribe(session_id)
+    flask_app._process_one_message(session_id, "hi")
+
+    events = []
+    while not subscriber.empty():
+        events.append(subscriber.get_nowait())
+
+    assert events == [
+        {"type": "reply", "sender": "Test Character", "content": "a reply"},
+        {"type": "round_done"},
+    ]
+
+
+def test_process_one_message_broadcasts_error_on_failure(db, monkeypatch):
+    db.add_character(**ONE_CHARACTER)
+    session_id = db.create_session("s")
+
+    def failing_reply(sid, name):
+        raise RuntimeError("model failed after 3 attempts.")
+
+    monkeypatch.setattr(main, "decide_speakers", lambda *a, **k: ["Test Character"])
+    monkeypatch.setattr(main, "generate_character_reply", failing_reply)
+
+    subscriber = flask_app._subscribe(session_id)
+    flask_app._process_one_message(session_id, "hi")
+
+    events = []
+    while not subscriber.empty():
+        events.append(subscriber.get_nowait())
+
+    assert events == [
+        {"type": "error", "message": "model failed after 3 attempts."},
+        {"type": "round_done"},
+    ]
+
+
+def test_unsubscribe_stops_further_broadcasts(db):
+    session_id = db.create_session("s")
+    subscriber = flask_app._subscribe(session_id)
+
+    flask_app._broadcast(session_id, {"type": "reply", "sender": "X", "content": "one"})
+    flask_app._unsubscribe(session_id, subscriber)
+    flask_app._broadcast(session_id, {"type": "reply", "sender": "X", "content": "two"})
+
+    events = []
+    while not subscriber.empty():
+        events.append(subscriber.get_nowait())
+
+    assert events == [{"type": "reply", "sender": "X", "content": "one"}]
 
 
 def test_index_page_loads(db):
