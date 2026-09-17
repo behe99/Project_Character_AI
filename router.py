@@ -67,6 +67,16 @@ conversation - if the same pair has been trading lines for several messages in a
 that's a sign to either let it end or bring in someone else with a genuine reason to
 speak, not to keep it going between the same two people again.
 
+RESPECT DIRECT ADDRESS. Work out who the latest message is actually aimed at - a direct
+question or demand is usually addressed to whoever it's replying to (often the human
+user), or to whoever is named explicitly ("Varys, answer me"). When the message is
+clearly aimed at one specific person, everyone else is a bystander and should generally
+stay silent, even if the topic touches their interests too. Only include a bystander in
+this case if they have a strong, specific reason to interrupt - the remark also targets
+them personally, or it's something they'd be compelled to react to - not just general
+relevance. A demand directed at "Varys" should not produce other characters as speakers
+unless something in the message also targets them specifically.
+
 Choose AT MOST 2 characters. It's okay, and often correct, to choose 0.
 
 Respond with ONLY valid JSON in this exact format, no other text:
