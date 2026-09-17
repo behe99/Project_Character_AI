@@ -9,6 +9,7 @@ from flask import Flask, jsonify, request, render_template, Response, stream_wit
 from database import (
     init_db, get_all_characters, get_session_characters, set_session_characters,
     get_last_session, create_session, get_messages, add_character, delete_character,
+    delete_message,
 )
 from seed_characters import seed
 import main
@@ -102,19 +103,32 @@ def _trigger_idle_check(session_id):
 
 def _process_one_item(session_id, item):
     kind, payload = item
+    saved_ids = {}
 
     def on_speaker_picked(name):
         _broadcast(session_id, {"type": "speaker_picked", "sender": name})
 
+    def on_message_saved(sender, message_id):
+        if sender == "user":
+            _broadcast(session_id, {"type": "user_message_saved", "id": message_id})
+        else:
+            saved_ids[sender] = message_id
+
     try:
         if kind == "user":
             stream = main.run_conversation_turn_stream(
-                session_id, payload, on_speaker_picked=on_speaker_picked
+                session_id, payload,
+                on_speaker_picked=on_speaker_picked, on_message_saved=on_message_saved,
             )
         else:
-            stream = main.run_idle_turn_stream(session_id, on_speaker_picked=on_speaker_picked)
+            stream = main.run_idle_turn_stream(
+                session_id,
+                on_speaker_picked=on_speaker_picked, on_message_saved=on_message_saved,
+            )
         for name, reply in stream:
-            _broadcast(session_id, {"type": "reply", "sender": name, "content": reply})
+            _broadcast(session_id, {
+                "type": "reply", "sender": name, "content": reply, "id": saved_ids.get(name),
+            })
     except (RuntimeError, ValueError) as e:
         _broadcast(session_id, {"type": "error", "message": str(e)})
     _broadcast(session_id, {"type": "round_done"})
@@ -215,6 +229,14 @@ def api_delete_character(name):
     return jsonify({"ok": True})
 
 
+@app.route("/api/messages/<int:message_id>", methods=["DELETE"])
+def api_delete_message(message_id):
+    deleted = delete_message(message_id)
+    if not deleted:
+        return jsonify({"error": "message not found"}), 404
+    return jsonify({"ok": True})
+
+
 @app.route("/api/session")
 def api_session():
     session_id = get_or_create_session_id()
@@ -222,7 +244,9 @@ def api_session():
     characters = sorted(get_session_characters(session_id), key=lambda c: c["id"])
     return jsonify({
         "session_id": session_id,
-        "messages": [{"sender": m["sender"], "content": m["content"]} for m in messages],
+        "messages": [
+            {"id": m["id"], "sender": m["sender"], "content": m["content"]} for m in messages
+        ],
         "characters": [c["name"] for c in characters],
     })
 

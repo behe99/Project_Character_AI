@@ -271,5 +271,39 @@ def get_messages(session_id):
     return [dict(row) for row in rows]
 
 
+def get_last_message_id(session_id):
+    """Returns the id of the most recently added message in this session, or
+    None if it has no messages yet. Used right after add_message() to learn
+    the id of what was just inserted, since add_message() itself doesn't
+    return one - safe because each session has exactly one writer at a
+    time (see app.py's per-session worker)."""
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        "SELECT id FROM messages WHERE session_id = ? ORDER BY id DESC LIMIT 1",
+        (session_id,)
+    )
+    row = cursor.fetchone()
+    conn.close()
+    return row[0] if row else None
+
+
+def delete_message(message_id):
+    """Removes a single message (yours or a character's) from its
+    conversation - e.g. to clean up a bad generation. Returns True if a row
+    was actually deleted, False if no message had that id."""
+    conn = get_connection()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM messages WHERE id = ?", (message_id,))
+        conn.commit()
+        return cursor.rowcount > 0
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+
+
 if __name__ == "__main__":
     init_db()

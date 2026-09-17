@@ -138,6 +138,24 @@ def test_api_delete_character_returns_404_when_not_found(db):
     assert res.status_code == 404
 
 
+def test_api_delete_message(db):
+    session_id = db.create_session("s")
+    db.add_message(session_id, "user", "oops")
+    message_id = db.get_messages(session_id)[0]["id"]
+    client = client_for(db)
+
+    res = client.delete(f"/api/messages/{message_id}")
+    assert res.status_code == 200
+    assert db.get_messages(session_id) == []
+
+
+def test_api_delete_message_returns_404_when_not_found(db):
+    client = client_for(db)
+
+    res = client.delete("/api/messages/999")
+    assert res.status_code == 404
+
+
 def test_api_session_creates_one_when_none_exists(db):
     client = client_for(db)
 
@@ -155,7 +173,8 @@ def test_api_session_returns_existing_messages(db):
     res = client.get("/api/session")
     data = res.get_json()
     assert data["session_id"] == session_id
-    assert data["messages"] == [{"sender": "user", "content": "hi"}]
+    message_id = db.get_messages(session_id)[0]["id"]
+    assert data["messages"] == [{"id": message_id, "sender": "user", "content": "hi"}]
 
 
 def test_api_new_session_creates_another_session(db):
@@ -236,10 +255,19 @@ def test_api_message_queues_instead_of_blocking(db, monkeypatch):
         except queue.Empty:
             pass
 
-    assert {"type": "reply", "sender": "Test Character", "content": "a reply"} in events
     # The user's own message is written to the DB by the worker itself, once
     # it actually starts processing - not by the request thread.
     assert [m["sender"] for m in db.get_messages(session_id)] == ["user"]
+    user_message_id = db.get_messages(session_id)[0]["id"]
+
+    reply_events = [e for e in events if e["type"] == "reply"]
+    # generate_character_reply is mocked here and never actually inserts a
+    # row, so get_last_message_id() still points at the user's own message -
+    # that's a quirk of this test's mock, not app behavior; a real reply
+    # would get its own id instead.
+    assert reply_events == [
+        {"type": "reply", "sender": "Test Character", "content": "a reply", "id": user_message_id}
+    ]
 
 
 def test_process_one_item_broadcasts_replies_then_round_done(db, monkeypatch):
@@ -266,9 +294,14 @@ def test_process_one_item_broadcasts_replies_then_round_done(db, monkeypatch):
     while not subscriber.empty():
         events.append(subscriber.get_nowait())
 
+    user_message_id = db.get_messages(session_id)[0]["id"]
     assert events == [
+        {"type": "user_message_saved", "id": user_message_id},
         {"type": "speaker_picked", "sender": "Test Character"},
-        {"type": "reply", "sender": "Test Character", "content": "a reply"},
+        {
+            "type": "reply", "sender": "Test Character", "content": "a reply",
+            "id": user_message_id,  # generate_character_reply is mocked, inserts nothing new
+        },
         {"type": "round_done"},
     ]
 
@@ -291,7 +324,9 @@ def test_process_one_item_broadcasts_error_on_failure(db, monkeypatch):
     while not subscriber.empty():
         events.append(subscriber.get_nowait())
 
+    user_message_id = db.get_messages(session_id)[0]["id"]
     assert events == [
+        {"type": "user_message_saved", "id": user_message_id},
         {"type": "speaker_picked", "sender": "Test Character"},
         {"type": "error", "message": "model failed after 3 attempts."},
         {"type": "round_done"},
@@ -316,9 +351,15 @@ def test_process_one_item_runs_an_idle_turn(db, monkeypatch):
     while not subscriber.empty():
         events.append(subscriber.get_nowait())
 
+    existing_message_id = db.get_messages(session_id)[0]["id"]
     assert events == [
         {"type": "speaker_picked", "sender": "Test Character"},
-        {"type": "reply", "sender": "Test Character", "content": "spontaneous line"},
+        {
+            "type": "reply", "sender": "Test Character", "content": "spontaneous line",
+            # generate_character_reply is mocked, inserts nothing new - id
+            # points at the pre-existing "hello?" message set up above.
+            "id": existing_message_id,
+        },
         {"type": "round_done"},
     ]
 
