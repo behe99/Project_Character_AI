@@ -34,11 +34,17 @@ def print_character_line(name, reply, color_map):
     print(f"{color}{name}:{Style.RESET_ALL} {reply}")
 
 
-def run_conversation_turn_stream(session_id, user_message):
+def run_conversation_turn_stream(session_id, user_message, on_speaker_picked=None):
     """Same logic as run_conversation_turn, but yields each (character_name,
     reply) tuple as soon as it's generated instead of collecting them all
     first - so a caller can display or broadcast replies one at a time as
-    they come in, rather than waiting for the whole round to finish."""
+    they come in, rather than waiting for the whole round to finish.
+
+    on_speaker_picked, if given, is called with a character's name the
+    moment the router picks them - before their line is actually generated,
+    which is the slow part. Callers can use this to show "X is typing..."
+    instead of a generic indicator, or a blank one, while that line is
+    still being written."""
     add_message(session_id, "user", user_message)
 
     latest_message = user_message
@@ -60,6 +66,8 @@ def run_conversation_turn_stream(session_id, user_message):
         for name in speakers:
             if turns_used >= MAX_CHARACTER_TURNS_PER_MESSAGE:
                 break
+            if on_speaker_picked:
+                on_speaker_picked(name)
             reply = generate_character_reply(session_id, name)
             yield name, reply
             latest_message = reply
@@ -80,15 +88,18 @@ def run_conversation_turn(session_id, user_message):
     return list(run_conversation_turn_stream(session_id, user_message))
 
 
-def run_idle_turn_stream(session_id):
+def run_idle_turn_stream(session_id, on_speaker_picked=None):
     """Lets one character speak up unprompted after a conversation has gone
     quiet for a while, instead of characters only ever reacting to the user
     or each other. Most of the time nobody has anything to say, so this
     yields nothing at all - it only yields a single (name, reply) when
-    decide_idle_speaker() picks someone."""
+    decide_idle_speaker() picks someone. See run_conversation_turn_stream
+    for what on_speaker_picked is for."""
     speaker = decide_idle_speaker(session_id)
     if speaker is None:
         return
+    if on_speaker_picked:
+        on_speaker_picked(speaker)
     reply = generate_character_reply(session_id, speaker)
     yield speaker, reply
 

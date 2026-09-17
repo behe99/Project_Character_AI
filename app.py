@@ -102,11 +102,17 @@ def _trigger_idle_check(session_id):
 
 def _process_one_item(session_id, item):
     kind, payload = item
+
+    def on_speaker_picked(name):
+        _broadcast(session_id, {"type": "speaker_picked", "sender": name})
+
     try:
         if kind == "user":
-            stream = main.run_conversation_turn_stream(session_id, payload)
+            stream = main.run_conversation_turn_stream(
+                session_id, payload, on_speaker_picked=on_speaker_picked
+            )
         else:
-            stream = main.run_idle_turn_stream(session_id)
+            stream = main.run_idle_turn_stream(session_id, on_speaker_picked=on_speaker_picked)
         for name, reply in stream:
             _broadcast(session_id, {"type": "reply", "sender": name, "content": reply})
     except (RuntimeError, ValueError) as e:

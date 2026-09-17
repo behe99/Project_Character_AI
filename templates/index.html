@@ -353,6 +353,7 @@ let characters = [];
 let sessionId = null;
 let eventSource = null;
 let pendingRounds = 0;
+let typingName = null;
 
 const messagesEl = document.getElementById("messages");
 const rosterEl = document.getElementById("roster");
@@ -586,23 +587,40 @@ async function loadSession() {
 }
 
 function updateTypingIndicator() {
-  typingEl.textContent = pendingRounds > 0 ? "Characters are typing..." : "";
+  if (typingName) {
+    typingEl.textContent = `${typingName} is typing...`;
+  } else if (pendingRounds > 0) {
+    typingEl.textContent = "Characters are typing...";
+  } else {
+    typingEl.textContent = "";
+  }
 }
 
 function connectStream(sid) {
   if (eventSource) eventSource.close();
   pendingRounds = 0;
+  typingName = null;
   updateTypingIndicator();
 
   eventSource = new EventSource(`/api/stream/${sid}`);
   eventSource.onmessage = e => {
     const event = JSON.parse(e.data);
-    if (event.type === "reply") {
+    if (event.type === "speaker_picked") {
+      // The router picked them, but their line isn't written yet - this
+      // fires before the (slower) "reply" event for the same character.
+      typingName = event.sender;
+      updateTypingIndicator();
+    } else if (event.type === "reply") {
       appendMessage(event.sender, event.content, "character");
+      if (typingName === event.sender) typingName = null;
+      updateTypingIndicator();
     } else if (event.type === "error") {
       appendMessage(null, event.message, "error");
+      typingName = null;
+      updateTypingIndicator();
     } else if (event.type === "round_done") {
       pendingRounds = Math.max(0, pendingRounds - 1);
+      typingName = null;
       updateTypingIndicator();
     }
   };

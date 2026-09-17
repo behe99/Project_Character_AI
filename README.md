@@ -64,6 +64,12 @@ reply that was already underway. Every message - including ones sent while
 others were still being answered - stays in the same conversation history,
 so characters can refer back to anything said earlier, interruption or not.
 
+The typing indicator names who's about to reply ("Tyrion Lannister is
+typing...") as soon as the router picks them, rather than a generic message
+the whole time - it only falls back to the generic version for the brief gap
+before anyone's been picked yet, or if the conversation is still deciding on
+a follow-up after their line lands.
+
 Characters can also speak up on their own. If a conversation you have open
 goes quiet for a while (a minute or two, randomized so it doesn't feel
 mechanical), one of them might occasionally say something unprompted - a new

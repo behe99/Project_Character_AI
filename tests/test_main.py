@@ -36,6 +36,57 @@ def test_run_idle_turn_stream_yields_nothing_when_nobody_speaks_up(db, monkeypat
     assert list(main.run_idle_turn_stream(session_id)) == []
 
 
+def test_run_idle_turn_stream_calls_on_speaker_picked_before_generating(db, monkeypatch):
+    db.add_character(**ONE_CHARACTER)
+    session_id = db.create_session("s")
+
+    picked = []
+    monkeypatch.setattr(main, "decide_idle_speaker", lambda sid: "Test Character")
+
+    def fake_generate_character_reply(sid, name):
+        assert picked == ["Test Character"]  # picked before the (slow) generation
+        return "spontaneous line"
+
+    monkeypatch.setattr(main, "generate_character_reply", fake_generate_character_reply)
+
+    list(main.run_idle_turn_stream(session_id, on_speaker_picked=picked.append))
+
+    assert picked == ["Test Character"]
+
+
+def test_run_idle_turn_stream_does_not_call_on_speaker_picked_when_nobody_speaks(db, monkeypatch):
+    db.add_character(**ONE_CHARACTER)
+    session_id = db.create_session("s")
+
+    picked = []
+    monkeypatch.setattr(main, "decide_idle_speaker", lambda sid: None)
+
+    list(main.run_idle_turn_stream(session_id, on_speaker_picked=picked.append))
+
+    assert picked == []
+
+
+def test_run_conversation_turn_stream_calls_on_speaker_picked_for_each_turn(db, monkeypatch):
+    other = dict(ONE_CHARACTER, name="Other Character")
+    db.add_character(**ONE_CHARACTER)
+    db.add_character(**other)
+    session_id = db.create_session("s")
+
+    call_count = {"n": 0}
+
+    def fake_decide_speakers(session_id, latest_message, exclude=None):
+        call_count["n"] += 1
+        return ["Test Character", "Other Character"] if call_count["n"] == 1 else []
+
+    monkeypatch.setattr(main, "decide_speakers", fake_decide_speakers)
+    monkeypatch.setattr(main, "generate_character_reply", lambda sid, name: "a reply")
+
+    picked = []
+    list(main.run_conversation_turn_stream(session_id, "hello", on_speaker_picked=picked.append))
+
+    assert picked == ["Test Character", "Other Character"]
+
+
 def test_run_conversation_turn_stream_yields_before_the_round_finishes(db, monkeypatch):
     """The whole point of the streaming version is that a caller can act on
     the first reply without waiting for the rest - verified here by reading

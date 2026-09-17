@@ -267,6 +267,7 @@ def test_process_one_item_broadcasts_replies_then_round_done(db, monkeypatch):
         events.append(subscriber.get_nowait())
 
     assert events == [
+        {"type": "speaker_picked", "sender": "Test Character"},
         {"type": "reply", "sender": "Test Character", "content": "a reply"},
         {"type": "round_done"},
     ]
@@ -291,6 +292,7 @@ def test_process_one_item_broadcasts_error_on_failure(db, monkeypatch):
         events.append(subscriber.get_nowait())
 
     assert events == [
+        {"type": "speaker_picked", "sender": "Test Character"},
         {"type": "error", "message": "model failed after 3 attempts."},
         {"type": "round_done"},
     ]
@@ -315,6 +317,7 @@ def test_process_one_item_runs_an_idle_turn(db, monkeypatch):
         events.append(subscriber.get_nowait())
 
     assert events == [
+        {"type": "speaker_picked", "sender": "Test Character"},
         {"type": "reply", "sender": "Test Character", "content": "spontaneous line"},
         {"type": "round_done"},
     ]
