@@ -102,6 +102,18 @@ Both modals also have a search box above the list - type a character's
 name or a show's name (e.g. "vikings") to instantly narrow it down, useful
 once you're adding your own characters on top of the seeded 45.
 
+## Managing conversations
+
+Click "Conversations" to see every conversation you've had, newest first -
+each row shows its name, message count, and when it was created. Click a
+name to switch to that conversation (the message feed and roster update in
+place, no page reload needed); click the ✎ next to a name to rename it
+in place; click "Delete" to remove a conversation and its messages for
+good. New conversations default to "Chat Session," but the "New
+Conversation" modal now has an optional name field so you can give one a
+real name (like "Vikings mead hall") right when you create it, instead of
+renaming it after the fact.
+
 ## Per-conversation casts
 
 Each conversation can have its own subset of characters instead of always

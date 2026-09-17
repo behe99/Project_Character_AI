@@ -243,6 +243,42 @@ def get_all_sessions():
     return [dict(row) for row in rows]
 
 
+def rename_session(session_id, name):
+    """Returns True if a session with that id was actually renamed, False
+    if no session had that id."""
+    conn = get_connection()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("UPDATE sessions SET name = ? WHERE id = ?", (name, session_id))
+        conn.commit()
+        return cursor.rowcount > 0
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+
+
+def delete_session(session_id):
+    """Deletes a conversation entirely - its messages, its character roster
+    scoping, and the session itself. Returns True if a session with that id
+    actually existed, False otherwise."""
+    conn = get_connection()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM messages WHERE session_id = ?", (session_id,))
+        cursor.execute("DELETE FROM session_characters WHERE session_id = ?", (session_id,))
+        cursor.execute("DELETE FROM sessions WHERE id = ?", (session_id,))
+        deleted = cursor.rowcount > 0
+        conn.commit()
+        return deleted
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+
+
 def add_message(session_id, sender, content):
     conn = get_connection()
     try:

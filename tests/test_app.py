@@ -228,6 +228,95 @@ def test_api_new_session_with_characters_scopes_the_roster(db):
     assert names == ["Test Character"]
 
 
+def test_api_new_session_accepts_a_name(db):
+    client = client_for(db)
+
+    res = client.post("/api/session/new", json={"name": "Vikings night"})
+    session_id = res.get_json()["session_id"]
+
+    sessions = db.get_all_sessions()
+    assert next(s for s in sessions if s["id"] == session_id)["name"] == "Vikings night"
+
+
+def test_api_new_session_without_a_name_defaults_to_chat_session(db):
+    client = client_for(db)
+
+    res = client.post("/api/session/new", json={})
+    session_id = res.get_json()["session_id"]
+
+    sessions = db.get_all_sessions()
+    assert next(s for s in sessions if s["id"] == session_id)["name"] == "Chat Session"
+
+
+def test_api_session_by_id_loads_a_specific_past_conversation(db):
+    old = db.create_session("Old conversation")
+    db.add_message(old, "user", "from the past")
+    current = db.create_session("Current")
+    db.add_message(current, "user", "right now")
+    client = client_for(db)
+
+    res = client.get(f"/api/session/{old}")
+    data = res.get_json()
+    assert data["session_id"] == old
+    assert data["messages"] == [
+        {"id": db.get_messages(old)[0]["id"], "sender": "user", "content": "from the past"}
+    ]
+
+
+def test_api_sessions_lists_most_recent_first(db):
+    first = db.create_session("First")
+    second = db.create_session("Second")
+    db.add_message(first, "user", "hi")
+    client = client_for(db)
+
+    res = client.get("/api/sessions")
+    data = res.get_json()
+    assert [s["id"] for s in data] == [second, first]
+    assert next(s for s in data if s["id"] == first)["message_count"] == 1
+
+
+def test_api_rename_session(db):
+    session_id = db.create_session("Chat Session")
+    client = client_for(db)
+
+    res = client.put(f"/api/sessions/{session_id}", json={"name": "Vikings night"})
+    assert res.status_code == 200
+    assert db.get_all_sessions()[0]["name"] == "Vikings night"
+
+
+def test_api_rename_session_requires_a_name(db):
+    session_id = db.create_session("Chat Session")
+    client = client_for(db)
+
+    res = client.put(f"/api/sessions/{session_id}", json={"name": "  "})
+    assert res.status_code == 400
+    assert db.get_all_sessions()[0]["name"] == "Chat Session"
+
+
+def test_api_rename_session_returns_404_when_not_found(db):
+    client = client_for(db)
+
+    res = client.put("/api/sessions/999", json={"name": "Anything"})
+    assert res.status_code == 404
+
+
+def test_api_delete_session(db):
+    session_id = db.create_session("s")
+    db.add_message(session_id, "user", "hello")
+    client = client_for(db)
+
+    res = client.delete(f"/api/sessions/{session_id}")
+    assert res.status_code == 200
+    assert db.get_all_sessions() == []
+
+
+def test_api_delete_session_returns_404_when_not_found(db):
+    client = client_for(db)
+
+    res = client.delete("/api/sessions/999")
+    assert res.status_code == 404
+
+
 def test_api_session_reports_the_scoped_roster(db):
     db.add_character(**ONE_CHARACTER)
     db.add_character(**dict(ONE_CHARACTER, name="Other Character"))

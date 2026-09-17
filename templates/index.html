@@ -224,6 +224,48 @@
     font-size: 12px;
   }
   .remove-btn:hover { color: #e06a6a; border-color: #e06a6a; }
+  .conv-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+  }
+  .conv-info { flex: 1; min-width: 0; }
+  .conv-name-row { display: flex; align-items: center; gap: 6px; }
+  .conv-name {
+    font-weight: 600;
+    cursor: pointer;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .conv-name:hover { color: var(--accent); }
+  .conv-name.current { color: var(--accent); }
+  .conv-rename-btn {
+    background: none;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 12px;
+    padding: 0;
+    flex-shrink: 0;
+  }
+  .conv-rename-btn:hover { color: var(--text); }
+  .conv-meta { color: var(--muted); font-size: 12px; margin-top: 2px; }
+  .conv-actions { display: flex; gap: 8px; flex-shrink: 0; }
+  .conv-rename-input {
+    background: var(--bg);
+    border: 1px solid var(--accent);
+    color: var(--text);
+    border-radius: 5px;
+    padding: 3px 6px;
+    font-size: 13px;
+    font-family: inherit;
+    width: 100%;
+  }
   .modal form { margin-top: 16px; display: flex; flex-direction: column; gap: 8px; }
   .modal label { font-size: 12px; color: var(--muted); margin-bottom: -4px; }
   .modal input, .modal textarea, .modal select {
@@ -263,10 +305,17 @@
     gap: 8px;
     font-size: 13px;
   }
-  #pick-search, #char-search {
+  #pick-search, #char-search, #new-session-name {
     display: block;
     width: 100%;
     margin: 10px 0;
+  }
+  label[for="new-session-name"] {
+    display: block;
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 8px;
+    margin-bottom: -6px;
   }
   .pick-actions { display: flex; gap: 8px; margin-bottom: 8px; }
   .link-btn {
@@ -311,6 +360,7 @@
     <h1>Character AI Chatroom</h1>
     <div class="header-actions">
       <button id="manage-btn">Manage Characters</button>
+      <button id="conversations-btn">Conversations</button>
       <button id="new-session-btn">New Conversation</button>
     </div>
   </header>
@@ -329,6 +379,8 @@
       <p style="color:var(--muted); font-size:13px; margin-top:-8px;">
         Choose who's in this conversation.
       </p>
+      <label for="new-session-name">Name (optional)</label>
+      <input type="text" id="new-session-name" placeholder="Chat Session">
       <input type="text" id="pick-search" placeholder="Search characters or shows...">
       <div class="pick-actions">
         <button type="button" class="link-btn" id="pick-all-btn">Select all</button>
@@ -402,6 +454,14 @@
     </div>
   </div>
 
+  <div class="modal-overlay" id="conversations-overlay">
+    <div class="modal">
+      <button class="modal-close" id="conversations-close-btn">&times;</button>
+      <h2>Conversations</h2>
+      <div id="conversations-list"></div>
+    </div>
+  </div>
+
 <script>
 const COLOR_PALETTE = [
   "#5b8dff", "#e0b04a", "#57c26b", "#d97fd9",
@@ -440,6 +500,11 @@ const pickEmptyQueryEl = document.getElementById("pick-empty-query");
 const charSearchEl = document.getElementById("char-search");
 const charEmptyEl = document.getElementById("char-empty");
 const charEmptyQueryEl = document.getElementById("char-empty-query");
+const newSessionNameEl = document.getElementById("new-session-name");
+const conversationsBtn = document.getElementById("conversations-btn");
+const conversationsOverlay = document.getElementById("conversations-overlay");
+const conversationsCloseBtn = document.getElementById("conversations-close-btn");
+const conversationsListEl = document.getElementById("conversations-list");
 
 const SHOW_ORDER = ["Game of Thrones", "Vikings", "The Walking Dead"];
 
@@ -845,10 +910,11 @@ function setGroupChecked(show, checked) {
 }
 
 function openNewSessionModal() {
+  newSessionNameEl.value = "";
   pickSearchEl.value = "";
   renderPickList();
   newSessionOverlay.classList.add("open");
-  pickSearchEl.focus();
+  newSessionNameEl.focus();
 }
 
 function closeNewSessionModal() {
@@ -858,11 +924,12 @@ function closeNewSessionModal() {
 async function startNewSession() {
   const selected = Array.from(pickListEl.querySelectorAll(".pick-checkbox:checked"))
     .map(cb => cb.value);
+  const name = newSessionNameEl.value.trim();
 
   const res = await fetch("/api/session/new", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ characters: selected }),
+    body: JSON.stringify({ characters: selected, name }),
   });
   const data = await res.json();
 
@@ -872,6 +939,165 @@ async function startNewSession() {
   connectStream(sessionId);
   closeNewSessionModal();
   inputEl.focus();
+}
+
+async function openConversationsModal() {
+  await loadConversationsList();
+  conversationsOverlay.classList.add("open");
+}
+
+function closeConversationsModal() {
+  conversationsOverlay.classList.remove("open");
+}
+
+async function loadConversationsList() {
+  const res = await fetch("/api/sessions");
+  const sessions = await res.json();
+  renderConversationsList(sessions);
+}
+
+function formatConversationMeta(session) {
+  const count = session.message_count;
+  const messageLabel = count === 1 ? "1 message" : `${count} messages`;
+  let dateLabel = "";
+  if (session.created_at) {
+    const parsed = new Date(session.created_at);
+    if (!isNaN(parsed)) dateLabel = " · " + parsed.toLocaleString();
+  }
+  return messageLabel + dateLabel;
+}
+
+function renderConversationsList(sessions) {
+  conversationsListEl.innerHTML = "";
+  if (sessions.length === 0) {
+    conversationsListEl.innerHTML =
+      '<p style="color:var(--muted); font-size:13px;">No conversations yet.</p>';
+    return;
+  }
+
+  sessions.forEach(session => {
+    const row = document.createElement("div");
+    row.className = "conv-row";
+
+    const info = document.createElement("div");
+    info.className = "conv-info";
+
+    const nameRow = document.createElement("div");
+    nameRow.className = "conv-name-row";
+
+    const nameSpan = document.createElement("span");
+    nameSpan.className = "conv-name" + (session.id === sessionId ? " current" : "");
+    nameSpan.textContent = session.name;
+    nameSpan.title = "Open this conversation";
+    nameSpan.addEventListener("click", () => openConversation(session.id));
+
+    const renameBtn = document.createElement("button");
+    renameBtn.className = "conv-rename-btn";
+    renameBtn.title = "Rename this conversation";
+    renameBtn.textContent = "✎";
+    renameBtn.addEventListener("click", () => startRenamingConversation(row, nameSpan, session));
+
+    nameRow.appendChild(nameSpan);
+    nameRow.appendChild(renameBtn);
+
+    const meta = document.createElement("div");
+    meta.className = "conv-meta";
+    meta.textContent = formatConversationMeta(session);
+
+    info.appendChild(nameRow);
+    info.appendChild(meta);
+
+    const actions = document.createElement("div");
+    actions.className = "conv-actions";
+    const deleteBtn = document.createElement("button");
+    deleteBtn.className = "remove-btn";
+    deleteBtn.textContent = "Delete";
+    deleteBtn.addEventListener("click", () => deleteConversation(session.id));
+    actions.appendChild(deleteBtn);
+
+    row.appendChild(info);
+    row.appendChild(actions);
+    conversationsListEl.appendChild(row);
+  });
+}
+
+function startRenamingConversation(row, nameSpan, session) {
+  if (row.querySelector(".conv-rename-input")) return; // already renaming
+
+  const input = document.createElement("input");
+  input.type = "text";
+  input.className = "conv-rename-input";
+  input.value = session.name;
+
+  nameSpan.style.display = "none";
+  nameSpan.insertAdjacentElement("afterend", input);
+  input.focus();
+  input.select();
+
+  function stopRenaming(save) {
+    input.remove();
+    nameSpan.style.display = "";
+    if (!save) return;
+    const newName = input.value.trim();
+    if (newName && newName !== session.name) {
+      renameConversation(session.id, newName, nameSpan, session);
+    }
+  }
+
+  input.addEventListener("keydown", e => {
+    if (e.key === "Enter") stopRenaming(true);
+    if (e.key === "Escape") stopRenaming(false);
+  });
+  input.addEventListener("blur", () => stopRenaming(true));
+}
+
+async function renameConversation(id, newName, nameSpan, session) {
+  const res = await fetch(`/api/sessions/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name: newName }),
+  });
+  if (res.ok) {
+    session.name = newName;
+    nameSpan.textContent = newName;
+  } else {
+    const data = await res.json().catch(() => ({}));
+    alert(data.error || "Could not rename that conversation.");
+  }
+}
+
+async function openConversation(id) {
+  if (id === sessionId) {
+    closeConversationsModal();
+    return;
+  }
+  const res = await fetch(`/api/session/${id}`);
+  const data = await res.json();
+
+  sessionId = data.session_id;
+  renderRosterBar(data.characters);
+  messagesEl.innerHTML = "";
+  data.messages.forEach(m => {
+    appendMessage(m.sender, m.content, m.sender === "user" ? "user" : "character", m.id);
+  });
+  connectStream(sessionId);
+  closeConversationsModal();
+  inputEl.focus();
+}
+
+async function deleteConversation(id) {
+  if (!confirm("Delete this conversation? This can't be undone.")) return;
+
+  const res = await fetch(`/api/sessions/${id}`, { method: "DELETE" });
+  if (res.ok) {
+    if (id === sessionId) {
+      await loadSession(); // falls back to the latest remaining conversation, or a fresh one
+    }
+    await loadConversationsList();
+  } else {
+    const data = await res.json().catch(() => ({}));
+    alert(data.error || "Could not delete that conversation.");
+  }
 }
 
 async function sendMessage() {
@@ -918,6 +1144,11 @@ newSessionBtn.addEventListener("click", openNewSessionModal);
 newSessionCloseBtn.addEventListener("click", closeNewSessionModal);
 newSessionOverlay.addEventListener("click", e => {
   if (e.target === newSessionOverlay) closeNewSessionModal();
+});
+conversationsBtn.addEventListener("click", openConversationsModal);
+conversationsCloseBtn.addEventListener("click", closeConversationsModal);
+conversationsOverlay.addEventListener("click", e => {
+  if (e.target === conversationsOverlay) closeConversationsModal();
 });
 pickAllBtn.addEventListener("click", () => {
   pickListEl.querySelectorAll(".pick-checkbox").forEach(cb => cb.checked = true);

@@ -9,7 +9,7 @@ from flask import Flask, jsonify, request, render_template, Response, stream_wit
 from database import (
     init_db, get_all_characters, get_session_characters, set_session_characters,
     get_last_session, create_session, get_messages, add_character, delete_character,
-    delete_message, update_message,
+    delete_message, update_message, get_all_sessions, rename_session, delete_session,
 )
 from seed_characters import seed
 import main
@@ -250,30 +250,85 @@ def api_update_message(message_id):
     return jsonify({"ok": True})
 
 
-@app.route("/api/session")
-def api_session():
-    session_id = get_or_create_session_id()
+def _session_payload(session_id):
     messages = get_messages(session_id)
     characters = sorted(get_session_characters(session_id), key=lambda c: c["id"])
-    return jsonify({
+    return {
         "session_id": session_id,
         "messages": [
             {"id": m["id"], "sender": m["sender"], "content": m["content"]} for m in messages
         ],
         "characters": [c["name"] for c in characters],
-    })
+    }
+
+
+@app.route("/api/session")
+def api_session():
+    return jsonify(_session_payload(get_or_create_session_id()))
+
+
+@app.route("/api/session/<int:session_id>")
+def api_session_by_id(session_id):
+    """Loads a specific past conversation - used when switching to one from
+    the Conversations list, instead of always resuming the latest."""
+    return jsonify(_session_payload(session_id))
 
 
 @app.route("/api/session/new", methods=["POST"])
 def api_new_session():
     data = request.get_json(silent=True) or {}
     character_names = data.get("characters")
+    name = (data.get("name") or "").strip() or "Chat Session"
 
-    session_id = create_session("Chat Session")
+    session_id = create_session(name)
     if character_names:
         set_session_characters(session_id, character_names)
 
     return jsonify({"session_id": session_id})
+
+
+@app.route("/api/sessions")
+def api_sessions():
+    """Lists every conversation, most recently created first - powers the
+    Conversations list in the web UI (switch/rename/delete)."""
+    sessions = sorted(get_all_sessions(), key=lambda s: s["id"], reverse=True)
+    return jsonify([
+        {
+            "id": s["id"], "name": s["name"],
+            "message_count": s["message_count"], "created_at": s["created_at"],
+        }
+        for s in sessions
+    ])
+
+
+@app.route("/api/sessions/<int:session_id>", methods=["PUT"])
+def api_rename_session(session_id):
+    data = request.get_json(silent=True) or {}
+    name = (data.get("name") or "").strip()
+    if not name:
+        return jsonify({"error": "name is required"}), 400
+
+    renamed = rename_session(session_id, name)
+    if not renamed:
+        return jsonify({"error": "conversation not found"}), 404
+    return jsonify({"ok": True})
+
+
+@app.route("/api/sessions/<int:session_id>", methods=["DELETE"])
+def api_delete_session(session_id):
+    deleted = delete_session(session_id)
+    if not deleted:
+        return jsonify({"error": "conversation not found"}), 404
+
+    # Tear down any in-memory state so a stray idle timer or subscriber list
+    # doesn't linger for a conversation that no longer exists.
+    _cancel_idle_check(session_id)
+    with _lock:
+        _session_queues.pop(session_id, None)
+        _session_subscribers.pop(session_id, None)
+        _workers_started.discard(session_id)
+
+    return jsonify({"ok": True})
 
 
 @app.route("/api/message", methods=["POST"])

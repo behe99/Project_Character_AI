@@ -280,6 +280,47 @@ def test_get_all_sessions_includes_message_counts(db):
     assert by_id[s2]["message_count"] == 0
 
 
+def test_rename_session_updates_its_name_and_returns_true(db):
+    session_id = db.create_session("Chat Session")
+
+    assert db.rename_session(session_id, "Vikings night") is True
+
+    sessions = db.get_all_sessions()
+    assert next(s for s in sessions if s["id"] == session_id)["name"] == "Vikings night"
+
+
+def test_rename_session_returns_false_when_not_found(db):
+    assert db.rename_session(999, "New name") is False
+
+
+def test_delete_session_removes_it_and_its_messages(db):
+    db.add_character(**ONE_CHARACTER)
+    session_id = db.create_session("s")
+    db.add_message(session_id, "user", "hello")
+    db.set_session_characters(session_id, ["Test Character"])
+
+    assert db.delete_session(session_id) is True
+
+    assert db.get_all_sessions() == []
+    assert db.get_messages(session_id) == []
+
+
+def test_delete_session_does_not_affect_other_sessions(db):
+    keep = db.create_session("keep me")
+    doomed = db.create_session("delete me")
+    db.add_message(keep, "user", "still here")
+
+    db.delete_session(doomed)
+
+    remaining = db.get_all_sessions()
+    assert [s["id"] for s in remaining] == [keep]
+    assert db.get_messages(keep)[0]["content"] == "still here"
+
+
+def test_delete_session_returns_false_when_not_found(db):
+    assert db.delete_session(999) is False
+
+
 def test_get_session_characters_defaults_to_everyone_when_unscoped(db):
     db.add_character(**ONE_CHARACTER)
     db.add_character(**dict(ONE_CHARACTER, name="Other Character"))
