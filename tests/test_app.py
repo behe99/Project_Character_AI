@@ -1,6 +1,8 @@
 import queue
 import time
 
+import pytest
+
 from conftest import ONE_CHARACTER
 
 import app as flask_app
@@ -10,6 +12,27 @@ import main
 def client_for(db):
     flask_app.app.config["TESTING"] = True
     return flask_app.app.test_client()
+
+
+@pytest.fixture(autouse=True)
+def _reset_worker_state():
+    """app.py tracks queues/subscribers/workers/idle timers in module-level
+    dicts keyed by session_id. Each test's `db` fixture starts a fresh
+    SQLite file where session ids restart at 1, so without this reset a
+    session_id from one test would collide with leftover state (a worker
+    already "started", an idle timer already scheduled) from an earlier
+    test that happened to use the same id."""
+    def _clear():
+        flask_app._session_queues.clear()
+        flask_app._session_subscribers.clear()
+        flask_app._workers_started.clear()
+        for timer in flask_app._idle_timers.values():
+            timer.cancel()
+        flask_app._idle_timers.clear()
+
+    _clear()
+    yield
+    _clear()
 
 
 def test_api_characters_lists_roster(db):
@@ -219,10 +242,10 @@ def test_api_message_queues_instead_of_blocking(db, monkeypatch):
     assert [m["sender"] for m in db.get_messages(session_id)] == ["user"]
 
 
-def test_process_one_message_broadcasts_replies_then_round_done(db, monkeypatch):
-    """_process_one_message is the synchronous unit the worker thread calls
-    per queued message - tested directly (no thread, no timing) so the
-    broadcast sequence is deterministic."""
+def test_process_one_item_broadcasts_replies_then_round_done(db, monkeypatch):
+    """_process_one_item is the synchronous unit the worker thread calls per
+    queued item - tested directly (no thread, no timing) so the broadcast
+    sequence is deterministic."""
     db.add_character(**ONE_CHARACTER)
     session_id = db.create_session("s")
 
@@ -236,7 +259,8 @@ def test_process_one_message_broadcasts_replies_then_round_done(db, monkeypatch)
     monkeypatch.setattr(main, "generate_character_reply", lambda sid, name: "a reply")
 
     subscriber = flask_app._subscribe(session_id)
-    flask_app._process_one_message(session_id, "hi")
+    flask_app._process_one_item(session_id, ("user", "hi"))
+    flask_app._cancel_idle_check(session_id)
 
     events = []
     while not subscriber.empty():
@@ -248,7 +272,7 @@ def test_process_one_message_broadcasts_replies_then_round_done(db, monkeypatch)
     ]
 
 
-def test_process_one_message_broadcasts_error_on_failure(db, monkeypatch):
+def test_process_one_item_broadcasts_error_on_failure(db, monkeypatch):
     db.add_character(**ONE_CHARACTER)
     session_id = db.create_session("s")
 
@@ -259,7 +283,8 @@ def test_process_one_message_broadcasts_error_on_failure(db, monkeypatch):
     monkeypatch.setattr(main, "generate_character_reply", failing_reply)
 
     subscriber = flask_app._subscribe(session_id)
-    flask_app._process_one_message(session_id, "hi")
+    flask_app._process_one_item(session_id, ("user", "hi"))
+    flask_app._cancel_idle_check(session_id)
 
     events = []
     while not subscriber.empty():
@@ -269,6 +294,47 @@ def test_process_one_message_broadcasts_error_on_failure(db, monkeypatch):
         {"type": "error", "message": "model failed after 3 attempts."},
         {"type": "round_done"},
     ]
+
+
+def test_process_one_item_runs_an_idle_turn(db, monkeypatch):
+    """An ("idle", None) item runs run_idle_turn_stream instead of a user
+    round - this is what a fired idle timer enqueues."""
+    db.add_character(**ONE_CHARACTER)
+    session_id = db.create_session("s")
+    db.add_message(session_id, "user", "hello?")
+
+    monkeypatch.setattr(main, "decide_idle_speaker", lambda sid: "Test Character")
+    monkeypatch.setattr(main, "generate_character_reply", lambda sid, name: "spontaneous line")
+
+    subscriber = flask_app._subscribe(session_id)
+    flask_app._process_one_item(session_id, ("idle", None))
+    flask_app._cancel_idle_check(session_id)
+
+    events = []
+    while not subscriber.empty():
+        events.append(subscriber.get_nowait())
+
+    assert events == [
+        {"type": "reply", "sender": "Test Character", "content": "spontaneous line"},
+        {"type": "round_done"},
+    ]
+
+
+def test_process_one_item_idle_turn_yields_nothing_when_nobody_speaks(db, monkeypatch):
+    session_id = db.create_session("s")
+    db.add_message(session_id, "user", "hello?")
+
+    monkeypatch.setattr(main, "decide_idle_speaker", lambda sid: None)
+
+    subscriber = flask_app._subscribe(session_id)
+    flask_app._process_one_item(session_id, ("idle", None))
+    flask_app._cancel_idle_check(session_id)
+
+    events = []
+    while not subscriber.empty():
+        events.append(subscriber.get_nowait())
+
+    assert events == [{"type": "round_done"}]
 
 
 def test_unsubscribe_stops_further_broadcasts(db):
@@ -284,6 +350,31 @@ def test_unsubscribe_stops_further_broadcasts(db):
         events.append(subscriber.get_nowait())
 
     assert events == [{"type": "reply", "sender": "X", "content": "one"}]
+
+
+def test_unsubscribe_last_subscriber_cancels_idle_check(db):
+    session_id = db.create_session("s")
+    subscriber = flask_app._subscribe(session_id)
+    flask_app._schedule_idle_check(session_id)
+    assert session_id in flask_app._idle_timers
+
+    flask_app._unsubscribe(session_id, subscriber)
+    assert session_id not in flask_app._idle_timers
+
+
+def test_subscribe_schedules_idle_check_only_for_active_sessions(db):
+    """A session with no worker yet (nothing has ever been sent) shouldn't
+    get idle chatter scheduled just because someone opened the page."""
+    fresh_session_id = db.create_session("fresh")
+    flask_app._subscribe(fresh_session_id)
+    assert fresh_session_id not in flask_app._idle_timers
+
+    active_session_id = db.create_session("active")
+    with flask_app._lock:
+        flask_app._workers_started.add(active_session_id)
+    flask_app._subscribe(active_session_id)
+    assert active_session_id in flask_app._idle_timers
+    flask_app._cancel_idle_check(active_session_id)
 
 
 def test_index_page_loads(db):

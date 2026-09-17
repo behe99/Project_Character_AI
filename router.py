@@ -106,6 +106,62 @@ Respond with ONLY valid JSON in this exact format, no other text:
     return speakers
 
 
+def decide_idle_speaker(session_id):
+    """Decides whether any character would naturally break a silence and say
+    something unprompted, instead of only ever reacting to the latest
+    message. Used when a conversation has gone quiet for a while - separate
+    from decide_speakers, which always reasons about a specific new message."""
+    characters = get_session_characters(session_id)
+    messages = get_messages(session_id)
+    if not characters or not messages:
+        return None
+
+    character_summary = build_character_summary(characters)
+    transcript = build_transcript(messages)
+
+    prompt = f"""You are the router for a group chat between fictional characters and a human user.
+
+CHARACTERS AVAILABLE:
+{character_summary}
+
+RECENT CONVERSATION (nobody has said anything for a while - it's gone quiet):
+{transcript}
+
+Decide whether ONE character would naturally break this silence and say something
+unprompted - a new thought, something tied to their own interests or backstory,
+circling back to something unresolved earlier in the conversation, or just casual
+small talk. Weigh their interrupt_tendency and assertiveness (higher = more likely
+to speak up into silence) and whether they'd genuinely have something to say right
+now, not just whether they theoretically could.
+
+BE CONSERVATIVE. This should be rare - most silences should just stay silent, the
+same way most real group chats don't have someone constantly restarting the
+conversation. Only pick a character when it clearly fits who they are.
+
+Respond with ONLY valid JSON in this exact format, no other text:
+{{"speaker": "Character Name"}} or {{"speaker": null}} if nobody would.
+"""
+
+    raw = call_model(prompt)
+    if raw.startswith("```"):
+        raw = raw.strip("`").replace("json", "", 1).strip()
+
+    try:
+        result = json.loads(raw)
+        speaker = result.get("speaker")
+    except json.JSONDecodeError:
+        print("Router returned invalid JSON for idle check:", raw)
+        return None
+
+    valid_names = {c["name"] for c in characters}
+    if speaker not in valid_names:
+        if speaker is not None:
+            print("Router picked unknown character for idle check, ignoring:", speaker)
+        return None
+
+    return speaker
+
+
 if __name__ == "__main__":
     from database import create_session, add_message
 

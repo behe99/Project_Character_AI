@@ -77,3 +77,61 @@ def test_filters_out_characters_outside_the_session_roster(db, monkeypatch):
 
     speakers = router.decide_speakers(session_id, "hello")
     assert speakers == ["Test Character"]
+
+
+def test_decide_idle_speaker_returns_the_picked_name(db, monkeypatch):
+    db.add_character(**ONE_CHARACTER)
+    session_id = db.create_session("s")
+    db.add_message(session_id, "user", "hello?")
+
+    monkeypatch.setattr(
+        router, "call_model", lambda prompt: '{"speaker": "Test Character"}'
+    )
+
+    assert router.decide_idle_speaker(session_id) == "Test Character"
+
+
+def test_decide_idle_speaker_returns_none_when_nobody_speaks_up(db, monkeypatch):
+    db.add_character(**ONE_CHARACTER)
+    session_id = db.create_session("s")
+    db.add_message(session_id, "user", "hello?")
+
+    monkeypatch.setattr(router, "call_model", lambda prompt: '{"speaker": null}')
+
+    assert router.decide_idle_speaker(session_id) is None
+
+
+def test_decide_idle_speaker_ignores_a_hallucinated_name(db, monkeypatch):
+    db.add_character(**ONE_CHARACTER)
+    session_id = db.create_session("s")
+    db.add_message(session_id, "user", "hello?")
+
+    monkeypatch.setattr(
+        router, "call_model", lambda prompt: '{"speaker": "Made Up Character"}'
+    )
+
+    assert router.decide_idle_speaker(session_id) is None
+
+
+def test_decide_idle_speaker_returns_none_on_invalid_json(db, monkeypatch):
+    db.add_character(**ONE_CHARACTER)
+    session_id = db.create_session("s")
+    db.add_message(session_id, "user", "hello?")
+
+    monkeypatch.setattr(router, "call_model", lambda prompt: "not json at all")
+
+    assert router.decide_idle_speaker(session_id) is None
+
+
+def test_decide_idle_speaker_returns_none_with_no_messages_yet(db):
+    db.add_character(**ONE_CHARACTER)
+    session_id = db.create_session("s")
+
+    assert router.decide_idle_speaker(session_id) is None
+
+
+def test_decide_idle_speaker_returns_none_with_no_characters(db):
+    session_id = db.create_session("s")
+    db.add_message(session_id, "user", "hello?")
+
+    assert router.decide_idle_speaker(session_id) is None

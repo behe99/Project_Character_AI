@@ -15,6 +15,27 @@ def test_guarantees_at_least_one_reply_on_first_round(db, monkeypatch):
     assert [name for name, _ in replies] == ["Test Character"]
 
 
+def test_run_idle_turn_stream_yields_the_picked_speaker(db, monkeypatch):
+    db.add_character(**ONE_CHARACTER)
+    session_id = db.create_session("s")
+
+    monkeypatch.setattr(main, "decide_idle_speaker", lambda sid: "Test Character")
+    monkeypatch.setattr(main, "generate_character_reply", lambda sid, name: "spontaneous line")
+
+    replies = list(main.run_idle_turn_stream(session_id))
+
+    assert replies == [("Test Character", "spontaneous line")]
+
+
+def test_run_idle_turn_stream_yields_nothing_when_nobody_speaks_up(db, monkeypatch):
+    db.add_character(**ONE_CHARACTER)
+    session_id = db.create_session("s")
+
+    monkeypatch.setattr(main, "decide_idle_speaker", lambda sid: None)
+
+    assert list(main.run_idle_turn_stream(session_id)) == []
+
+
 def test_run_conversation_turn_stream_yields_before_the_round_finishes(db, monkeypatch):
     """The whole point of the streaming version is that a caller can act on
     the first reply without waiting for the rest - verified here by reading

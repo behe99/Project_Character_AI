@@ -64,6 +64,15 @@ reply that was already underway. Every message - including ones sent while
 others were still being answered - stays in the same conversation history,
 so characters can refer back to anything said earlier, interruption or not.
 
+Characters can also speak up on their own. If a conversation you have open
+goes quiet for a while (a minute or two, randomized so it doesn't feel
+mechanical), one of them might occasionally say something unprompted - a new
+thought, something tied to their own interests, or circling back to
+something unresolved earlier - the same way a real group chat isn't always
+waiting on you to say something first. This is deliberately rare (most
+quiet moments should just stay quiet) and only happens while you actually
+have the page open; closing the tab or switching conversations stops it.
+
 Click "Manage Characters" to add a new character (same fields as
 `create_character.py`, in a form) or remove an existing one, right from the
 browser - no separate script needed.

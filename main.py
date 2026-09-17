@@ -6,7 +6,7 @@ from database import (
     init_db, create_session, get_last_session, add_message,
     get_all_characters, get_session_characters, set_session_characters, get_messages,
 )
-from router import decide_speakers
+from router import decide_speakers, decide_idle_speaker
 from character_response import generate_character_reply
 from seed_characters import seed
 
@@ -78,6 +78,19 @@ def run_conversation_turn(session_id, user_message):
     Prefer run_conversation_turn_stream() directly if you can display replies
     as they arrive instead of waiting for the whole list."""
     return list(run_conversation_turn_stream(session_id, user_message))
+
+
+def run_idle_turn_stream(session_id):
+    """Lets one character speak up unprompted after a conversation has gone
+    quiet for a while, instead of characters only ever reacting to the user
+    or each other. Most of the time nobody has anything to say, so this
+    yields nothing at all - it only yields a single (name, reply) when
+    decide_idle_speaker() picks someone."""
+    speaker = decide_idle_speaker(session_id)
+    if speaker is None:
+        return
+    reply = generate_character_reply(session_id, speaker)
+    yield speaker, reply
 
 
 SHOW_ORDER = ["Game of Thrones", "Vikings", "The Walking Dead"]

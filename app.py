@@ -1,5 +1,6 @@
 import json
 import queue
+import random
 import sqlite3
 import threading
 
@@ -10,11 +11,11 @@ from database import (
     get_last_session, create_session, get_messages, add_character, delete_character,
 )
 from seed_characters import seed
-from main import run_conversation_turn_stream
+import main
 
 app = Flask(__name__)
 
-# Each session gets its own FIFO queue of pending user messages and its own
+# Each session gets its own FIFO queue of pending work items and its own
 # background worker thread that processes them one at a time. This is what
 # lets someone send a second message while characters are still replying to
 # the first: it's queued immediately (and shown in their own browser right
@@ -24,10 +25,23 @@ app = Flask(__name__)
 # generates is pushed to that session's subscribers (open /api/stream
 # connections) as soon as it's ready, so the browser can render them one by
 # one instead of waiting for the whole round.
+#
+# A queue item is ("user", message_text) for something the user sent, or
+# ("idle", None) for a scheduled check of whether a character should speak
+# up unprompted after a period of silence (see the idle-timer functions
+# below). Both kinds go through the same queue so they're never processed
+# out of order or on top of each other.
 _lock = threading.Lock()
 _session_queues = {}
 _session_subscribers = {}
 _workers_started = set()
+_idle_timers = {}
+
+# How long a session has to sit quiet, with someone actually watching it,
+# before a character might speak up on their own. Randomized so it doesn't
+# feel like a mechanical timer going off on the dot.
+IDLE_MIN_SECONDS = 60
+IDLE_MAX_SECONDS = 180
 
 
 def _get_queue(session_id):
@@ -48,6 +62,10 @@ def _subscribe(session_id):
     subscriber_queue = queue.Queue()
     with _lock:
         _session_subscribers.setdefault(session_id, []).append(subscriber_queue)
+    # Only worth scheduling idle chatter once there's a real conversation
+    # (a worker has processed at least one message) and someone's watching.
+    if session_id in _workers_started:
+        _schedule_idle_check(session_id)
     return subscriber_queue
 
 
@@ -56,22 +74,57 @@ def _unsubscribe(session_id, subscriber_queue):
         subscribers = _session_subscribers.get(session_id, [])
         if subscriber_queue in subscribers:
             subscribers.remove(subscriber_queue)
+        still_watched = len(subscribers) > 0
+    if not still_watched:
+        _cancel_idle_check(session_id)
 
 
-def _process_one_message(session_id, user_message):
+def _schedule_idle_check(session_id):
+    _cancel_idle_check(session_id)
+    delay = random.uniform(IDLE_MIN_SECONDS, IDLE_MAX_SECONDS)
+    timer = threading.Timer(delay, _trigger_idle_check, args=(session_id,))
+    timer.daemon = True
+    with _lock:
+        _idle_timers[session_id] = timer
+    timer.start()
+
+
+def _cancel_idle_check(session_id):
+    with _lock:
+        timer = _idle_timers.pop(session_id, None)
+    if timer:
+        timer.cancel()
+
+
+def _trigger_idle_check(session_id):
+    _get_queue(session_id).put(("idle", None))
+
+
+def _process_one_item(session_id, item):
+    kind, payload = item
     try:
-        for name, reply in run_conversation_turn_stream(session_id, user_message):
+        if kind == "user":
+            stream = main.run_conversation_turn_stream(session_id, payload)
+        else:
+            stream = main.run_idle_turn_stream(session_id)
+        for name, reply in stream:
             _broadcast(session_id, {"type": "reply", "sender": name, "content": reply})
     except (RuntimeError, ValueError) as e:
         _broadcast(session_id, {"type": "error", "message": str(e)})
     _broadcast(session_id, {"type": "round_done"})
 
+    # Only worth rescheduling if someone's still actually watching.
+    with _lock:
+        still_watched = bool(_session_subscribers.get(session_id))
+    if still_watched:
+        _schedule_idle_check(session_id)
+
 
 def _worker_loop(session_id):
     session_queue = _get_queue(session_id)
     while True:
-        user_message = session_queue.get()
-        _process_one_message(session_id, user_message)
+        item = session_queue.get()
+        _process_one_item(session_id, item)
 
 
 def _ensure_worker(session_id):
@@ -190,7 +243,8 @@ def api_message():
         return jsonify({"error": "session_id and message are required"}), 400
 
     _ensure_worker(session_id)
-    _get_queue(session_id).put(user_message)
+    _cancel_idle_check(session_id)
+    _get_queue(session_id).put(("user", user_message))
 
     return jsonify({"queued": True}), 202
 
