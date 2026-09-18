@@ -1,8 +1,10 @@
 # Character AI Chatroom
 
 A group chat where fictional characters respond to a human user and to each
-other, powered by Gemini. Ships with 45 characters across three shows: Game
-of Thrones, Vikings, and The Walking Dead.
+other, powered by Gemini. Ships with 121 characters across eleven shows:
+Game of Thrones, Vikings, The Walking Dead, La Casa de Papel (Money Heist),
+Squid Game, Breaking Bad, Prison Break, Friends, The Simpsons, The Office,
+and Stranger Things.
 
 - `database.py` — SQLite persistence for characters, sessions, and messages.
 - `router.py` — decides which character(s), if any, should respond to the latest message.
@@ -10,7 +12,10 @@ of Thrones, Vikings, and The Walking Dead.
 - `llm.py` — shared Gemini client/model call with retry logic.
 - `seed_characters.py` — seeds the database with the full character roster.
 - `shows/` — one module per show (`got` characters live in `seed_characters.py`
-  itself; `vikings.py` and `walking_dead.py` are separate modules combined in).
+  itself; every other show - `vikings.py`, `walking_dead.py`,
+  `casa_de_papel.py`, `squid_game.py`, `breaking_bad.py`, `prison_break.py`,
+  `friends.py`, `simpsons.py`, `the_office.py`, `stranger_things.py` - is a
+  separate module combined in).
 - `create_character.py` — interactively add your own character, from any show.
 - `main.py` — interactive terminal chat loop.
 - `app.py` — Flask web UI, built on the same `run_conversation_turn()` as main.py.
@@ -93,7 +98,7 @@ browser - no separate script needed.
 Both "Manage Characters" and the "New Conversation" picker group characters
 by show instead of one long list, and each show is collapsed by default -
 you see just the show names (e.g. "▸ Vikings (15)") and click one to expand
-just that cast, instead of scrolling past all 45+ characters to find who
+just that cast, instead of scrolling past all 121+ characters to find who
 you want. Each group in the picker has its own "all"/"none" links alongside
 the global "Select all"/"Select none" - clicking those doesn't expand or
 collapse the group. When adding a character, fill in the "Show/universe"
@@ -103,13 +108,13 @@ one (leave it blank and they land under "Custom").
 Every character gets a small emoji avatar - shown in the roster bar, the
 character lists, the picker, and next to their name in chat - instead of
 a plain colored dot, so it's easier to tell everyone apart at a glance. All
-45 seeded characters have one already picked out; give a new character
+121 seeded characters have one already picked out; give a new character
 their own via the "Avatar" field (a single emoji) when adding them, or
 leave it blank and they'll just show their first initial instead.
 
 Both modals also have a search box above the list - type a character's
 name or a show's name (e.g. "vikings") to instantly narrow it down, useful
-once you're adding your own characters on top of the seeded 45. Searching
+once you're adding your own characters on top of the seeded 121. Searching
 auto-expands any collapsed show that has a match, and collapses back to
 however you had it once you clear the search.
 
@@ -146,8 +151,8 @@ pressing enter in the terminal) keeps the old "everyone's in the room"
 behavior. Conversations created before this feature, or where nobody
 picked a subset, still include every character - nothing changes for them.
 
-**With 45 characters spanning three different shows now, "everyone's in
-the room" means Ragnar Lothbrok, Rick Grimes, and Tyrion Lannister are all
+**With 121 characters spanning eleven different shows now, "everyone's in
+the room" means Ragnar Lothbrok, Walter White, and Michael Scott are all
 in the same conversation by default.** That can be fun as a novelty, but
 for a focused, coherent conversation, pick just one show's cast when you
 start a new conversation instead of leaving everyone checked.

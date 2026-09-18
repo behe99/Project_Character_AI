@@ -106,13 +106,17 @@ def run_idle_turn_stream(session_id, on_speaker_picked=None):
     yield speaker, reply
 
 
-SHOW_ORDER = ["Game of Thrones", "Vikings", "The Walking Dead"]
+SHOW_ORDER = [
+    "Game of Thrones", "Vikings", "The Walking Dead", "La Casa de Papel",
+    "Squid Game", "Breaking Bad", "Prison Break", "Friends", "The Simpsons",
+    "The Office", "Stranger Things",
+]
 
 
 def group_by_show(characters):
-    """Groups characters by their show, GoT/Vikings/TWD first in that order,
-    then any other shows alphabetically - so a long roster reads as
-    sections instead of one flat list."""
+    """Groups characters by their show, in SHOW_ORDER's order first, then
+    any other shows alphabetically - so a long roster reads as sections
+    instead of one flat list."""
     groups = {}
     for c in characters:
         groups.setdefault(c.get("show") or "Custom", []).append(c)

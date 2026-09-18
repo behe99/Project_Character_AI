@@ -8,18 +8,14 @@ def test_seed_adds_all_characters(db):
 
 
 def test_all_seeded_characters_have_a_show_from_their_source_module():
-    from shows import vikings, walking_dead
-
-    vikings_names = {c["name"] for c in vikings.CHARACTERS}
-    twd_names = {c["name"] for c in walking_dead.CHARACTERS}
+    expected_show_by_name = {}
+    for module, show_name in seed_characters.SHOW_MODULES:
+        for c in module.CHARACTERS:
+            expected_show_by_name[c["name"]] = show_name
 
     for c in seed_characters.CHARACTERS:
-        if c["name"] in vikings_names:
-            assert c["show"] == "Vikings"
-        elif c["name"] in twd_names:
-            assert c["show"] == "The Walking Dead"
-        else:
-            assert c["show"] == "Game of Thrones"
+        expected = expected_show_by_name.get(c["name"], "Game of Thrones")
+        assert c["show"] == expected
 
 
 def test_all_seeded_characters_have_an_avatar():

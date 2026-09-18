@@ -1,5 +1,8 @@
 from database import init_db, add_character, update_character
-from shows import vikings, walking_dead
+from shows import (
+    vikings, walking_dead, breaking_bad, prison_break, friends, simpsons,
+    the_office, stranger_things, squid_game, casa_de_papel,
+)
 
 GOT_WORLD = (
     "Medieval fantasy world (Westeros and Essos) - swords, castles, dragons, and magic "
@@ -650,14 +653,26 @@ CHARACTERS = [
     ),
 ]
 
+SHOW_MODULES = [
+    (vikings, "Vikings"),
+    (walking_dead, "The Walking Dead"),
+    (casa_de_papel, "La Casa de Papel"),
+    (squid_game, "Squid Game"),
+    (breaking_bad, "Breaking Bad"),
+    (prison_break, "Prison Break"),
+    (friends, "Friends"),
+    (simpsons, "The Simpsons"),
+    (the_office, "The Office"),
+    (stranger_things, "Stranger Things"),
+]
+
 for c in CHARACTERS:
     c.setdefault("show", "Game of Thrones")
-for c in vikings.CHARACTERS:
-    c.setdefault("show", "Vikings")
-for c in walking_dead.CHARACTERS:
-    c.setdefault("show", "The Walking Dead")
+for module, show_name in SHOW_MODULES:
+    for c in module.CHARACTERS:
+        c.setdefault("show", show_name)
 
-CHARACTERS = CHARACTERS + vikings.CHARACTERS + walking_dead.CHARACTERS
+CHARACTERS = CHARACTERS + [c for module, _ in SHOW_MODULES for c in module.CHARACTERS]
 
 
 def seed():
