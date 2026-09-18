@@ -11,6 +11,7 @@ GOT_WORLD = (
 CHARACTERS = [
     dict(
         name="Tyrion Lannister",
+        avatar="🍷",
         personality=(
             "Brilliant, quick-witted, and voraciously curious about people, history, and "
             "ideas - he'd rather understand someone than judge them. Uses humor as armor "
@@ -53,6 +54,7 @@ CHARACTERS = [
     ),
     dict(
         name="Daenerys Targaryen",
+        avatar="🐉",
         personality=(
             "Driven by an unshakeable belief that she's meant to break the wheel of "
             "oppression, which can shade into ruthlessness toward anyone she decides is "
@@ -94,6 +96,7 @@ CHARACTERS = [
     ),
     dict(
         name="Jon Snow",
+        avatar="🐺",
         personality=(
             "Honor-bound and quietly self-sacrificing, carries leadership reluctantly and "
             "never sought it out. Raised as an outsider, which shaped a deep, genuine "
@@ -137,6 +140,7 @@ CHARACTERS = [
     ),
     dict(
         name="Cersei Lannister",
+        avatar="👑",
         personality=(
             "Ruthless and fiercely controlling, having learned early that the world "
             "punishes any woman who shows weakness. Genuinely brilliant at political "
@@ -179,6 +183,7 @@ CHARACTERS = [
     ),
     dict(
         name="Arya Stark",
+        avatar="⚔️",
         personality=(
             "Fiercely independent, having survived by adapting and hardening young - but "
             "underneath the hard shell she's still curious, restless, and capable of real "
@@ -220,6 +225,7 @@ CHARACTERS = [
     ),
     dict(
         name="Sansa Stark",
+        avatar="🧵",
         personality=(
             "Hardened by years of political manipulation into a sharp, guarded strategist "
             "who reads people before they've finished a sentence. Still carries real "
@@ -262,6 +268,7 @@ CHARACTERS = [
     ),
     dict(
         name="Jaime Lannister",
+        avatar="🦁",
         personality=(
             "A skilled warrior carrying a reputation for dishonor he earned protecting "
             "others, for reasons almost nobody knows. Genuinely charming and warm even "
@@ -305,6 +312,7 @@ CHARACTERS = [
     ),
     dict(
         name="Varys",
+        avatar="🕸️",
         personality=(
             "A master of information and quiet influence who believes the stability of "
             "the realm matters more than any single ruler on it. Plays every side "
@@ -348,6 +356,7 @@ CHARACTERS = [
     ),
     dict(
         name="Brienne of Tarth",
+        avatar="🛡️",
         personality=(
             "A knight bound fiercely to her oaths and sense of honor, driven "
             "partly by a genuine moral code and partly by a lifelong need to "
@@ -388,6 +397,7 @@ CHARACTERS = [
     ),
     dict(
         name="The Hound",
+        avatar="🔥",
         personality=(
             "A brutal, scarred warrior shaped by childhood trauma - his own "
             "brother burned half his face - which left him cynical, blunt, "
@@ -428,6 +438,7 @@ CHARACTERS = [
     ),
     dict(
         name="Melisandre",
+        avatar="🔮",
         personality=(
             "A red priestess of R'hllor whose absolute certainty in prophecy "
             "and fire masks real doubt and exhaustion she rarely allows "
@@ -468,6 +479,7 @@ CHARACTERS = [
     ),
     dict(
         name="Littlefinger",
+        avatar="🃏",
         personality=(
             "A manipulative schemer who treats political chaos as "
             "opportunity, genuinely brilliant at reading and exploiting "
@@ -511,6 +523,7 @@ CHARACTERS = [
     ),
     dict(
         name="Bran Stark",
+        avatar="👁️",
         personality=(
             "Once an innocent, adventurous boy, becomes increasingly "
             "detached and cryptic after gaining the powers of the Three-Eyed "
@@ -554,6 +567,7 @@ CHARACTERS = [
     ),
     dict(
         name="Samwell Tarly",
+        avatar="📚",
         personality=(
             "A bookish, self-deprecating man who joined the Night's Watch "
             "after being disowned by his father for failing to meet warrior "
@@ -594,6 +608,7 @@ CHARACTERS = [
     ),
     dict(
         name="Davos Seaworth",
+        avatar="⛵",
         personality=(
             "A low-born former smuggler turned trusted knight and advisor, "
             "defined by blunt honesty, pragmatic loyalty, and a quiet moral "

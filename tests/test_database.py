@@ -96,6 +96,19 @@ def test_add_and_update_character_store_show(db):
     assert db.get_all_characters()[0]["show"] == "The Walking Dead"
 
 
+def test_add_character_defaults_avatar_to_empty(db):
+    db.add_character(**ONE_CHARACTER)
+    assert db.get_all_characters()[0]["avatar"] == ""
+
+
+def test_add_and_update_character_store_avatar(db):
+    db.add_character(**dict(ONE_CHARACTER, avatar="🍷"))
+    assert db.get_all_characters()[0]["avatar"] == "🍷"
+
+    db.update_character(**dict(ONE_CHARACTER, avatar="🐉"))
+    assert db.get_all_characters()[0]["avatar"] == "🐉"
+
+
 def test_migration_adds_show_to_old_schema(tmp_path, monkeypatch):
     db_path = str(tmp_path / "old_schema_show.db")
     conn = sqlite3.connect(db_path)
@@ -130,6 +143,44 @@ def test_migration_adds_show_to_old_schema(tmp_path, monkeypatch):
     assert "show" in columns
     row = conn.execute("SELECT show FROM characters WHERE name = 'Old Character'").fetchone()
     assert row == ("Custom",)
+    conn.close()
+
+
+def test_migration_adds_avatar_to_old_schema(tmp_path, monkeypatch):
+    db_path = str(tmp_path / "old_schema_avatar.db")
+    conn = sqlite3.connect(db_path)
+    conn.execute("""
+        CREATE TABLE characters (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL UNIQUE,
+            personality TEXT NOT NULL,
+            speech_style TEXT NOT NULL,
+            backstory TEXT DEFAULT '',
+            sample_lines TEXT DEFAULT '[]',
+            relationships TEXT DEFAULT '{}',
+            triggers TEXT DEFAULT '[]',
+            interrupt_tendency TEXT DEFAULT 'medium',
+            assertiveness TEXT DEFAULT 'medium',
+            world_context TEXT DEFAULT '',
+            show TEXT DEFAULT 'Custom'
+        )
+    """)
+    conn.execute(
+        "INSERT INTO characters (name, personality, speech_style) VALUES (?, ?, ?)",
+        ("Old Character", "old personality", "old style"),
+    )
+    conn.commit()
+    conn.close()
+
+    import database
+    monkeypatch.setattr(database, "DB_NAME", db_path)
+    database.init_db()
+
+    conn = sqlite3.connect(db_path)
+    columns = {row[1] for row in conn.execute("PRAGMA table_info(characters)")}
+    assert "avatar" in columns
+    row = conn.execute("SELECT avatar FROM characters WHERE name = 'Old Character'").fetchone()
+    assert row == ("",)
     conn.close()
 
 

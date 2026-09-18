@@ -11,6 +11,7 @@ TWD_WORLD = (
 CHARACTERS = [
     dict(
         name="Rick Grimes",
+        avatar="🤠",
         personality=(
             "A former sheriff's deputy who becomes the group's central "
             "leader, driven by a genuine, sometimes rigid moral compass that "
@@ -52,6 +53,7 @@ CHARACTERS = [
     ),
     dict(
         name="Daryl Dixon",
+        avatar="🏹",
         personality=(
             "A gruff, crossbow-wielding loner from a rough upbringing who "
             "becomes one of the group's most fiercely loyal protectors. "
@@ -91,6 +93,7 @@ CHARACTERS = [
     ),
     dict(
         name="Michonne",
+        avatar="⚔️",
         personality=(
             "A katana-wielding survivor whose guarded, near-silent exterior "
             "masks deep trauma - including losing her young son and walking "
@@ -131,6 +134,7 @@ CHARACTERS = [
     ),
     dict(
         name="Carol Peletier",
+        avatar="🧁",
         personality=(
             "Starts as a meek, abused wife and transforms into one of the "
             "most ruthless, pragmatic survivors in the group, willing to make "
@@ -171,6 +175,7 @@ CHARACTERS = [
     ),
     dict(
         name="Negan",
+        avatar="🏏",
         personality=(
             "A charismatic, brutally violent leader who uses dark humor, "
             "theatrical menace, and a barbed-wire bat named Lucille to "
@@ -211,6 +216,7 @@ CHARACTERS = [
     ),
     dict(
         name="Glenn Rhee",
+        avatar="🚚",
         personality=(
             "A former pizza delivery driver who becomes one of the group's "
             "most resourceful scouts and moral centers. Genuinely kind, "
@@ -249,6 +255,7 @@ CHARACTERS = [
     ),
     dict(
         name="Maggie Greene",
+        avatar="🌾",
         personality=(
             "A farmer's daughter who grows from a sheltered young woman into "
             "a hardened, capable leader in her own right. Fiercely loyal and "
@@ -288,6 +295,7 @@ CHARACTERS = [
     ),
     dict(
         name="Shane Walsh",
+        avatar="🔫",
         personality=(
             "Rick's former partner and best friend, whose loyalty curdles "
             "into obsession and instability as the world collapses and his "
@@ -328,6 +336,7 @@ CHARACTERS = [
     ),
     dict(
         name="Hershel Greene",
+        avatar="⛪",
         personality=(
             "An old farmer and devoutly religious man who serves as a moral "
             "anchor for the group, patient and wise even as the world tests "
@@ -368,6 +377,7 @@ CHARACTERS = [
     ),
     dict(
         name="Andrea",
+        avatar="🎯",
         personality=(
             "A sharp-tongued, fiercely independent former civil rights "
             "attorney who prizes self-reliance and refuses to be sidelined "
@@ -408,6 +418,7 @@ CHARACTERS = [
     ),
     dict(
         name="The Governor",
+        avatar="👁️",
         personality=(
             "A charismatic, controlling tyrant who presents a warm, "
             "reassuring public face while concealing deep psychopathy and "
@@ -448,6 +459,7 @@ CHARACTERS = [
     ),
     dict(
         name="Abraham Ford",
+        avatar="💣",
         personality=(
             "A loud, aggressive former military sergeant with a dark, "
             "profane sense of gallows humor that masks deep guilt over "
@@ -487,6 +499,7 @@ CHARACTERS = [
     ),
     dict(
         name="Eugene Porter",
+        avatar="🧪",
         personality=(
             "An awkward, verbose, self-described scientist who initially "
             "lies about knowing a cure for the outbreak out of sheer "
@@ -527,6 +540,7 @@ CHARACTERS = [
     ),
     dict(
         name="Morgan Jones",
+        avatar="🥋",
         personality=(
             "A survivor whose philosophy toward violence swings dramatically "
             "over the years - from pacifism, to brutal vengeance after "
@@ -567,6 +581,7 @@ CHARACTERS = [
     ),
     dict(
         name="Ezekiel",
+        avatar="🐯",
         personality=(
             "An eccentric, theatrical leader who rules the Kingdom through "
             "deliberate myth-making and performance, complete with a pet "

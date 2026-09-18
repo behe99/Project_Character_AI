@@ -97,6 +97,13 @@ global "Select all"/"Select none". When adding a character, fill in the
 "Show/universe" field with an existing show's name to group them with it,
 or type a new one (leave it blank and they land under "Custom").
 
+Every character gets a small emoji avatar - shown in the roster bar, the
+character lists, the picker, and next to their name in chat - instead of
+a plain colored dot, so it's easier to tell everyone apart at a glance. All
+45 seeded characters have one already picked out; give a new character
+their own via the "Avatar" field (a single emoji) when adding them, or
+leave it blank and they'll just show their first initial instead.
+
 Both modals also have a search box above the list - type a character's
 name or a show's name (e.g. "vikings") to instantly narrow it down, useful
 once you're adding your own characters on top of the seeded 45.
@@ -143,9 +150,9 @@ python history.py 2        # show the full transcript of session 2
 python create_character.py
 ```
 
-Walks you through their show/universe, personality, speech style,
-world/setting, backstory, sample lines, relationships, triggers, and how
-likely they are to jump into a conversation. Running it again with an
+Walks you through their show/universe, an emoji avatar, personality, speech
+style, world/setting, backstory, sample lines, relationships, triggers, and
+how likely they are to jump into a conversation. Running it again with an
 existing character's name overwrites their details instead of duplicating
 them. Reuse an existing show's name (it lists what's already in the
 database) to group a new character with that cast in the picker, or type a

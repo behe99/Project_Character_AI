@@ -170,6 +170,7 @@ def api_characters():
             "name": c["name"],
             "personality": c["personality"],
             "show": c["show"] or "Custom",
+            "avatar": c["avatar"] or "",
         }
         for c in characters
     ])
@@ -201,6 +202,7 @@ def api_create_character():
             interrupt_tendency=data.get("interrupt_tendency") or "medium",
             assertiveness=data.get("assertiveness") or "medium",
             show=(data.get("show") or "Custom").strip() or "Custom",
+            avatar=(data.get("avatar") or "").strip(),
         )
     except sqlite3.IntegrityError:
         return jsonify({"error": f"'{name}' already exists"}), 409

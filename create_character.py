@@ -68,6 +68,12 @@ def create_character():
         required=False,
     ) or "Custom"
 
+    avatar = prompt(
+        "Avatar - a single emoji shown next to their name (e.g. \U0001F377 or \U0001F409). "
+        "Leave blank to just use their first initial",
+        required=False,
+    )
+
     personality = prompt(
         "Personality - describe MULTIPLE distinct sides of them, not just their most "
         "famous trait (e.g. not just 'brilliant strategist', but also their humor, "
@@ -112,6 +118,7 @@ def create_character():
     character = dict(
         name=name,
         show=show,
+        avatar=avatar,
         personality=personality,
         speech_style=speech_style,
         world_context=world_context,

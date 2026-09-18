@@ -22,6 +22,20 @@ def test_all_seeded_characters_have_a_show_from_their_source_module():
             assert c["show"] == "Game of Thrones"
 
 
+def test_all_seeded_characters_have_an_avatar():
+    for c in seed_characters.CHARACTERS:
+        assert c.get("avatar"), f"{c['name']} has no avatar set"
+
+
+def test_seeded_avatars_are_unique_within_each_show():
+    groups = {}
+    for c in seed_characters.CHARACTERS:
+        groups.setdefault(c["show"], []).append(c["avatar"])
+
+    for show, avatars in groups.items():
+        assert len(avatars) == len(set(avatars)), f"duplicate avatar within {show}"
+
+
 def test_seed_twice_updates_instead_of_duplicating(db, monkeypatch):
     seed_characters.seed()
     before_count = len(db.get_all_characters())

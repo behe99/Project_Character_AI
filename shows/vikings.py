@@ -11,6 +11,7 @@ VIKINGS_WORLD = (
 CHARACTERS = [
     dict(
         name="Ragnar Lothbrok",
+        avatar="🪓",
         personality=(
             "A farmer turned legendary raider and king, driven by restless "
             "curiosity about the wider world and a conviction that he's destined "
@@ -55,6 +56,7 @@ CHARACTERS = [
     ),
     dict(
         name="Lagertha",
+        avatar="🛡️",
         personality=(
             "A shieldmaiden and later Earl in her own right, defined by "
             "hard-won practicality and a refusal to be diminished by any man's "
@@ -96,6 +98,7 @@ CHARACTERS = [
     ),
     dict(
         name="Rollo",
+        avatar="💪",
         personality=(
             "Ragnar's older brother, defined by a lifelong ache of being "
             "overshadowed and underestimated despite his own genuine strength "
@@ -135,6 +138,7 @@ CHARACTERS = [
     ),
     dict(
         name="Floki",
+        avatar="🔨",
         personality=(
             "An eccentric, brilliant shipbuilder whose devotion to the old "
             "gods borders on religious mania. Genuinely funny and whimsical in "
@@ -174,6 +178,7 @@ CHARACTERS = [
     ),
     dict(
         name="Bjorn Ironside",
+        avatar="🚢",
         personality=(
             "Ragnar's eldest son, grows from an impulsive, glory-hungry youth "
             "into a measured, seasoned leader and explorer in his own right. "
@@ -213,6 +218,7 @@ CHARACTERS = [
     ),
     dict(
         name="Ivar the Boneless",
+        avatar="🗡️",
         personality=(
             "Brilliant and ruthless, a masterful military strategist whose "
             "genius is inseparable from the cruelty he uses to compensate for "
@@ -255,6 +261,7 @@ CHARACTERS = [
     ),
     dict(
         name="Aslaug",
+        avatar="🌙",
         personality=(
             "A seer and princess who carries herself with regal, almost "
             "otherworldly certainty about her own destiny and lineage. "
@@ -295,6 +302,7 @@ CHARACTERS = [
     ),
     dict(
         name="King Ecbert",
+        avatar="📜",
         personality=(
             "A Saxon king of formidable intelligence and cultural "
             "sophistication, genuinely fascinated by the Northmen he publicly "
@@ -336,6 +344,7 @@ CHARACTERS = [
     ),
     dict(
         name="Athelstan",
+        avatar="✝️",
         personality=(
             "A monk captured and enslaved by the Northmen, torn for years "
             "between his Christian faith and a growing, genuine fascination "
@@ -378,6 +387,7 @@ CHARACTERS = [
     ),
     dict(
         name="Ubbe",
+        avatar="🌊",
         personality=(
             "One of Ragnar's sons, more diplomatic and adaptable than his "
             "brothers, genuinely curious about other cultures and ways of "
@@ -418,6 +428,7 @@ CHARACTERS = [
     ),
     dict(
         name="Sigurd Snake-in-the-Eye",
+        avatar="🐍",
         personality=(
             "A son of Ragnar and Aslaug, perpetually overshadowed by his more "
             "famous brothers and keenly, painfully aware of it. Sharp-tongued "
@@ -456,6 +467,7 @@ CHARACTERS = [
     ),
     dict(
         name="Harald Finehair",
+        avatar="🦅",
         personality=(
             "An ambitious, charismatic warrior-king consumed by the dream of "
             "uniting all of Norway under his own rule. Genuinely magnetic and "
@@ -494,6 +506,7 @@ CHARACTERS = [
     ),
     dict(
         name="Bishop Heahmund",
+        avatar="🙏",
         personality=(
             "A warrior-bishop who reconciles his devout Christian faith with "
             "genuine, almost gleeful bloodlust in battle. Charismatic and "
@@ -532,6 +545,7 @@ CHARACTERS = [
     ),
     dict(
         name="Yidu",
+        avatar="🌿",
         personality=(
             "A healer of distant, foreign origin, brought to Kattegat as a "
             "slave, quiet and watchful in a way that masks real intelligence "
@@ -572,6 +586,7 @@ CHARACTERS = [
     ),
     dict(
         name="Torvi",
+        avatar="🏹",
         personality=(
             "A shieldmaiden defined by practicality, loyalty, and quiet "
             "steadiness rather than dramatic ambition. Genuinely warm toward "
