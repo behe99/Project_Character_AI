@@ -64,7 +64,6 @@
   .msg .name { font-weight: 600; margin-right: 6px; }
   .msg.user { align-self: flex-end; text-align: right; color: var(--text); }
   .msg.user .bubble {
-    position: relative;
     background: var(--accent);
     color: white;
     padding: 8px 12px;
@@ -72,71 +71,11 @@
     display: inline-block;
   }
   .msg.character .bubble {
-    position: relative;
     background: var(--panel);
     border: 1px solid var(--border);
     padding: 8px 12px;
     border-radius: 12px 12px 12px 2px;
     display: inline-block;
-  }
-  .msg-actions {
-    position: absolute;
-    top: -8px;
-    right: -8px;
-    display: flex;
-    gap: 4px;
-    opacity: 0;
-    transition: opacity 0.15s;
-  }
-  .msg:hover .msg-actions { opacity: 1; }
-  .msg-action-btn {
-    width: 18px;
-    height: 18px;
-    border-radius: 50%;
-    background: var(--panel);
-    border: 1px solid var(--border);
-    color: var(--muted);
-    font-size: 11px;
-    line-height: 1;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0;
-  }
-  .msg-action-btn:hover { color: var(--text); border-color: var(--accent); }
-  .delete-msg-btn:hover { color: #e06a6a; border-color: #e06a6a; }
-  .edit-textarea {
-    display: block;
-    width: 220px;
-    max-width: 60vw;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    color: var(--text);
-    border-radius: 6px;
-    padding: 6px 8px;
-    font-size: 14px;
-    font-family: inherit;
-    resize: vertical;
-    margin-top: 4px;
-  }
-  .edit-actions { display: flex; gap: 6px; margin-top: 6px; justify-content: flex-end; }
-  .edit-save-btn, .edit-cancel-btn {
-    border: none;
-    border-radius: 5px;
-    padding: 4px 10px;
-    font-size: 12px;
-    cursor: pointer;
-  }
-  .edit-save-btn { background: var(--accent); color: white; }
-  .edit-cancel-btn { background: transparent; border: 1px solid var(--border); color: var(--muted); }
-  .msg.user .edit-save-btn {
-    background: rgba(255, 255, 255, 0.9);
-    color: var(--accent);
-  }
-  .msg.user .edit-cancel-btn {
-    border-color: rgba(255, 255, 255, 0.5);
-    color: rgba(255, 255, 255, 0.9);
   }
   .msg.error .bubble {
     background: transparent;
@@ -474,7 +413,6 @@ let characters = [];
 let sessionId = null;
 let eventSource = null;
 let typingName = null;
-let pendingUserRows = [];
 
 const messagesEl = document.getElementById("messages");
 const rosterEl = document.getElementById("roster");
@@ -532,7 +470,7 @@ function isScrolledNearBottom() {
   return messagesEl.scrollHeight - messagesEl.scrollTop - messagesEl.clientHeight < 100;
 }
 
-function appendMessage(sender, content, kind, messageId) {
+function appendMessage(sender, content, kind) {
   // Checked before the new message is added, since appending changes
   // scrollHeight - otherwise this would always read as "near the bottom."
   // Your own messages always snap you back down; other arrivals only do
@@ -542,8 +480,6 @@ function appendMessage(sender, content, kind, messageId) {
 
   const row = document.createElement("div");
   row.className = "msg " + kind;
-  if (messageId != null) row.dataset.messageId = messageId;
-
   const bubble = document.createElement("div");
   bubble.className = "bubble";
   if (kind === "character") {
@@ -553,119 +489,13 @@ function appendMessage(sender, content, kind, messageId) {
     nameSpan.style.color = colorFor(sender);
     bubble.appendChild(nameSpan);
   }
-
-  const textSpan = document.createElement("span");
-  textSpan.className = "msg-text";
-  textSpan.textContent = content;
-  bubble.appendChild(textSpan);
-
-  if (kind === "user" || kind === "character") {
-    const actions = document.createElement("span");
-    actions.className = "msg-actions";
-
-    const editBtn = document.createElement("button");
-    editBtn.className = "msg-action-btn edit-msg-btn";
-    editBtn.title = "Edit this message";
-    editBtn.textContent = "✎";
-    editBtn.addEventListener("click", () => startEditingMessage(row, bubble, textSpan));
-    actions.appendChild(editBtn);
-
-    const deleteBtn = document.createElement("button");
-    deleteBtn.className = "msg-action-btn delete-msg-btn";
-    deleteBtn.title = "Delete this message";
-    deleteBtn.textContent = "×";
-    deleteBtn.addEventListener("click", () => deleteMessage(row));
-    actions.appendChild(deleteBtn);
-
-    bubble.appendChild(actions);
-  }
-
+  bubble.appendChild(document.createTextNode(content));
   row.appendChild(bubble);
   messagesEl.appendChild(row);
   if (shouldStickToBottom) {
     messagesEl.scrollTop = messagesEl.scrollHeight;
   }
   return row;
-}
-
-async function deleteMessage(row) {
-  const messageId = row.dataset.messageId;
-  if (!messageId) return; // not saved to the database yet - nothing to delete
-  if (!confirm("Delete this message? This can't be undone.")) return;
-
-  const res = await fetch(`/api/messages/${messageId}`, { method: "DELETE" });
-  if (res.ok) {
-    row.remove();
-  } else {
-    const data = await res.json().catch(() => ({}));
-    alert(data.error || "Could not delete that message.");
-  }
-}
-
-function startEditingMessage(row, bubble, textSpan) {
-  if (!row.dataset.messageId) return; // not saved to the database yet
-  if (bubble.querySelector(".edit-textarea")) return; // already editing
-
-  const originalText = textSpan.textContent;
-  const actions = bubble.querySelector(".msg-actions");
-
-  const textarea = document.createElement("textarea");
-  textarea.className = "edit-textarea";
-  textarea.value = originalText;
-
-  const editActions = document.createElement("div");
-  editActions.className = "edit-actions";
-
-  const saveBtn = document.createElement("button");
-  saveBtn.className = "edit-save-btn";
-  saveBtn.textContent = "Save";
-
-  const cancelBtn = document.createElement("button");
-  cancelBtn.className = "edit-cancel-btn";
-  cancelBtn.type = "button";
-  cancelBtn.textContent = "Cancel";
-
-  editActions.appendChild(saveBtn);
-  editActions.appendChild(cancelBtn);
-
-  textSpan.style.display = "none";
-  if (actions) actions.style.display = "none";
-  bubble.appendChild(textarea);
-  bubble.appendChild(editActions);
-  textarea.focus();
-  textarea.setSelectionRange(textarea.value.length, textarea.value.length);
-
-  function stopEditing() {
-    textarea.remove();
-    editActions.remove();
-    textSpan.style.display = "";
-    if (actions) actions.style.display = "";
-  }
-
-  cancelBtn.addEventListener("click", stopEditing);
-  textarea.addEventListener("keydown", e => {
-    if (e.key === "Escape") stopEditing();
-  });
-
-  saveBtn.addEventListener("click", async () => {
-    const newText = textarea.value.trim();
-    if (!newText || newText === originalText) {
-      stopEditing();
-      return;
-    }
-    const res = await fetch(`/api/messages/${row.dataset.messageId}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ content: newText }),
-    });
-    if (res.ok) {
-      textSpan.textContent = newText;
-      stopEditing();
-    } else {
-      const data = await res.json().catch(() => ({}));
-      alert(data.error || "Could not save that edit.");
-    }
-  });
 }
 
 async function loadCharacters() {
@@ -829,7 +659,7 @@ async function loadSession() {
   renderRosterBar(data.characters);
   messagesEl.innerHTML = "";
   data.messages.forEach(m => {
-    appendMessage(m.sender, m.content, m.sender === "user" ? "user" : "character", m.id);
+    appendMessage(m.sender, m.content, m.sender === "user" ? "user" : "character");
   });
   connectStream(sessionId);
 }
@@ -841,7 +671,6 @@ function updateTypingIndicator() {
 function connectStream(sid) {
   if (eventSource) eventSource.close();
   typingName = null;
-  pendingUserRows = [];
   updateTypingIndicator();
 
   eventSource = new EventSource(`/api/stream/${sid}`);
@@ -854,16 +683,9 @@ function connectStream(sid) {
       typingName = event.sender;
       updateTypingIndicator();
     } else if (event.type === "reply") {
-      appendMessage(event.sender, event.content, "character", event.id);
+      appendMessage(event.sender, event.content, "character");
       if (typingName === event.sender) typingName = null;
       updateTypingIndicator();
-    } else if (event.type === "user_message_saved") {
-      // The user's own message is only committed to the database once the
-      // worker actually starts processing it (see app.py) - this is how the
-      // browser learns its id afterward, so it can be deleted later. Rows
-      // are matched in submission order, since processing is strictly FIFO.
-      const row = pendingUserRows.shift();
-      if (row) row.dataset.messageId = event.id;
     } else if (event.type === "error") {
       appendMessage(null, event.message, "error");
       typingName = null;
@@ -1105,7 +927,7 @@ async function openConversation(id) {
     renderRosterBar(data.characters);
     messagesEl.innerHTML = "";
     data.messages.forEach(m => {
-      appendMessage(m.sender, m.content, m.sender === "user" ? "user" : "character", m.id);
+      appendMessage(m.sender, m.content, m.sender === "user" ? "user" : "character");
     });
     connectStream(sessionId);
     closeConversationsModal();
@@ -1137,11 +959,8 @@ async function sendMessage() {
   // Shown right away and sent without waiting for anyone's reply, so you
   // can keep sending messages while characters are still answering earlier
   // ones - each is queued and processed in order, replies stream in one by
-  // one over /api/stream as they're generated. It has no id yet - that
-  // arrives later via a "user_message_saved" event once the worker actually
-  // commits it (see connectStream) - until then it can't be deleted.
-  const row = appendMessage(null, text, "user");
-  pendingUserRows.push(row);
+  // one over /api/stream as they're generated.
+  appendMessage(null, text, "user");
   inputEl.value = "";
   updateSendButtonState();
 
@@ -1154,17 +973,10 @@ async function sendMessage() {
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
       appendMessage(null, data.error || "Could not send that message.", "error");
-      forgetPendingRow(row); // never queued - no "user_message_saved" is coming for it
     }
   } catch (e) {
     appendMessage(null, "Could not reach the server.", "error");
-    forgetPendingRow(row);
   }
-}
-
-function forgetPendingRow(row) {
-  const index = pendingUserRows.indexOf(row);
-  if (index !== -1) pendingUserRows.splice(index, 1);
 }
 
 function updateSendButtonState() {

@@ -85,13 +85,6 @@ waiting on you to say something first. This is deliberately rare (most
 quiet moments should just stay quiet) and only happens while you actually
 have the page open; closing the tab or switching conversations stops it.
 
-Hover over any message - yours or a character's - to reveal a small ✎ (edit)
-and × (delete) button. Deleting removes it for good; editing lets you fix a
-typo or steer a reply in place without deleting and resending. Either way,
-the change is what characters see going forward too, since they always
-read the current conversation history, not a fixed snapshot from when it
-was first generated.
-
 Click "Manage Characters" to add a new character (same fields as
 `create_character.py`, in a form) or remove an existing one, right from the
 browser - no separate script needed.

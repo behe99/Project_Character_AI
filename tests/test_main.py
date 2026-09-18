@@ -66,49 +66,6 @@ def test_run_idle_turn_stream_does_not_call_on_speaker_picked_when_nobody_speaks
     assert picked == []
 
 
-def test_run_idle_turn_stream_calls_on_message_saved_with_the_new_id(db, monkeypatch):
-    db.add_character(**ONE_CHARACTER)
-    session_id = db.create_session("s")
-
-    monkeypatch.setattr(main, "decide_idle_speaker", lambda sid: "Test Character")
-
-    def fake_generate_character_reply(sid, name):
-        db.add_message(sid, name, "spontaneous line")
-        return "spontaneous line"
-
-    monkeypatch.setattr(main, "generate_character_reply", fake_generate_character_reply)
-
-    saved = []
-    list(main.run_idle_turn_stream(session_id, on_message_saved=lambda s, m: saved.append((s, m))))
-
-    new_message_id = db.get_messages(session_id)[0]["id"]
-    assert saved == [("Test Character", new_message_id)]
-
-
-def test_run_conversation_turn_stream_calls_on_message_saved_for_user_and_each_reply(db, monkeypatch):
-    other = dict(ONE_CHARACTER, name="Other Character")
-    db.add_character(**ONE_CHARACTER)
-    db.add_character(**other)
-    session_id = db.create_session("s")
-
-    call_count = {"n": 0}
-
-    def fake_decide_speakers(session_id, latest_message, exclude=None, turns_so_far=0):
-        call_count["n"] += 1
-        return ["Test Character"] if call_count["n"] == 1 else []
-
-    def fake_generate_character_reply(sid, name):
-        db.add_message(sid, name, "a reply")
-        return "a reply"
-
-    monkeypatch.setattr(main, "decide_speakers", fake_decide_speakers)
-    monkeypatch.setattr(main, "generate_character_reply", fake_generate_character_reply)
-
-    saved = []
-    list(main.run_conversation_turn_stream(session_id, "hello", on_message_saved=lambda s, m: saved.append((s, m))))
-
-    messages = db.get_messages(session_id)
-    assert saved == [("user", messages[0]["id"]), ("Test Character", messages[1]["id"])]
 
 
 def test_run_conversation_turn_stream_calls_on_speaker_picked_for_each_turn(db, monkeypatch):
