@@ -231,6 +231,15 @@ def get_last_session():
     return dict(row) if row else None
 
 
+def get_session(session_id):
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM sessions WHERE id = ?", (session_id,))
+    row = cursor.fetchone()
+    conn.close()
+    return dict(row) if row else None
+
+
 def get_all_sessions():
     conn = get_connection()
     cursor = conn.cursor()

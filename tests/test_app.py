@@ -298,6 +298,40 @@ def test_api_session_reports_the_scoped_roster(db):
     assert res.get_json()["characters"] == ["Test Character"]
 
 
+def test_api_export_session_returns_a_text_transcript(db):
+    session_id = db.create_session("Vikings night")
+    db.add_message(session_id, "user", "hello")
+    db.add_message(session_id, "Ragnar Lothbrok", "hi there")
+    client = client_for(db)
+
+    res = client.get(f"/api/sessions/{session_id}/export")
+    assert res.status_code == 200
+    assert res.mimetype == "text/plain"
+    assert "attachment" in res.headers["Content-Disposition"]
+    assert "Vikings night.txt" in res.headers["Content-Disposition"]
+
+    body = res.get_data(as_text=True)
+    assert "Vikings night" in body
+    assert "You: hello" in body
+    assert "Ragnar Lothbrok: hi there" in body
+
+
+def test_api_export_session_sanitizes_the_filename(db):
+    session_id = db.create_session('we/ird: "name"?')
+    client = client_for(db)
+
+    res = client.get(f"/api/sessions/{session_id}/export")
+    assert res.status_code == 200
+    assert res.headers["Content-Disposition"] == 'attachment; filename="weird name.txt"'
+
+
+def test_api_export_session_returns_404_when_not_found(db):
+    client = client_for(db)
+
+    res = client.get("/api/sessions/999/export")
+    assert res.status_code == 404
+
+
 def test_api_message_requires_session_id_and_message(db):
     client = client_for(db)
 

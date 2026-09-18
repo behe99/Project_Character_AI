@@ -195,7 +195,7 @@
     font-size: 13px;
   }
   .char-row .left { display: flex; align-items: center; gap: 8px; }
-  .remove-btn {
+  .remove-btn, .export-btn {
     background: none;
     border: 1px solid var(--border);
     color: var(--muted);
@@ -205,6 +205,7 @@
     font-size: 12px;
   }
   .remove-btn:hover { color: #e06a6a; border-color: #e06a6a; }
+  .export-btn:hover { color: var(--accent); border-color: var(--accent); }
   .conv-row {
     display: flex;
     align-items: center;
@@ -943,6 +944,12 @@ function renderConversationsList(sessions) {
 
     const actions = document.createElement("div");
     actions.className = "conv-actions";
+    const exportBtn = document.createElement("button");
+    exportBtn.className = "export-btn";
+    exportBtn.textContent = "Export";
+    exportBtn.title = "Download this conversation as a text file";
+    exportBtn.addEventListener("click", () => exportConversation(session.id));
+    actions.appendChild(exportBtn);
     const deleteBtn = document.createElement("button");
     deleteBtn.className = "remove-btn";
     deleteBtn.textContent = "Delete";
@@ -1025,6 +1032,10 @@ async function openConversation(id) {
   } catch (e) {
     alert("Could not reach the server.");
   }
+}
+
+function exportConversation(id) {
+  window.location.href = `/api/sessions/${id}/export`;
 }
 
 async function deleteConversation(id) {

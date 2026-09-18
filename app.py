@@ -1,6 +1,7 @@
 import json
 import queue
 import random
+import re
 import sqlite3
 import threading
 
@@ -9,7 +10,7 @@ from flask import Flask, jsonify, request, render_template, Response, stream_wit
 from database import (
     init_db, get_all_characters, get_session_characters, set_session_characters,
     get_last_session, create_session, get_messages, add_character, delete_character,
-    get_all_sessions, rename_session, delete_session,
+    get_all_sessions, get_session, rename_session, delete_session,
 )
 from seed_characters import seed
 import main
@@ -295,6 +296,29 @@ def api_delete_session(session_id):
         _workers_started.discard(session_id)
 
     return jsonify({"ok": True})
+
+
+@app.route("/api/sessions/<int:session_id>/export")
+def api_export_session(session_id):
+    """Downloads a conversation as a plain-text transcript - one line per
+    message, in order, with the human's messages labeled "You"."""
+    session = get_session(session_id)
+    if not session:
+        return jsonify({"error": "conversation not found"}), 404
+
+    messages = get_messages(session_id)
+    lines = [session["name"], ""]
+    for m in messages:
+        sender = "You" if m["sender"] == "user" else m["sender"]
+        lines.append(f"{sender}: {m['content']}")
+    transcript = "\n".join(lines) + "\n"
+
+    safe_name = re.sub(r"[^A-Za-z0-9 _-]", "", session["name"]).strip() or "conversation"
+    return Response(
+        transcript,
+        mimetype="text/plain",
+        headers={"Content-Disposition": f'attachment; filename="{safe_name}.txt"'},
+    )
 
 
 @app.route("/api/message", methods=["POST"])
