@@ -175,7 +175,10 @@ def test_api_session_returns_existing_messages(db):
     res = client.get("/api/session")
     data = res.get_json()
     assert data["session_id"] == session_id
-    assert data["messages"] == [{"sender": "user", "content": "hi"}]
+    assert len(data["messages"]) == 1
+    assert data["messages"][0]["sender"] == "user"
+    assert data["messages"][0]["content"] == "hi"
+    assert data["messages"][0]["timestamp"]
 
 
 def test_api_new_session_creates_another_session(db):
@@ -230,7 +233,10 @@ def test_api_session_by_id_loads_a_specific_past_conversation(db):
     res = client.get(f"/api/session/{old}")
     data = res.get_json()
     assert data["session_id"] == old
-    assert data["messages"] == [{"sender": "user", "content": "from the past"}]
+    assert len(data["messages"]) == 1
+    assert data["messages"][0]["sender"] == "user"
+    assert data["messages"][0]["content"] == "from the past"
+    assert data["messages"][0]["timestamp"]
 
 
 def test_api_sessions_lists_most_recent_first(db):
@@ -382,9 +388,10 @@ def test_api_message_queues_instead_of_blocking(db, monkeypatch):
     assert [m["sender"] for m in db.get_messages(session_id)] == ["user"]
 
     reply_events = [e for e in events if e["type"] == "reply"]
-    assert reply_events == [
-        {"type": "reply", "sender": "Test Character", "content": "a reply"}
-    ]
+    assert len(reply_events) == 1
+    assert reply_events[0]["sender"] == "Test Character"
+    assert reply_events[0]["content"] == "a reply"
+    assert reply_events[0]["timestamp"]
 
 
 def test_process_one_item_broadcasts_replies_then_round_done(db, monkeypatch):
@@ -411,11 +418,12 @@ def test_process_one_item_broadcasts_replies_then_round_done(db, monkeypatch):
     while not subscriber.empty():
         events.append(subscriber.get_nowait())
 
-    assert events == [
-        {"type": "speaker_picked", "sender": "Test Character"},
-        {"type": "reply", "sender": "Test Character", "content": "a reply"},
-        {"type": "round_done"},
-    ]
+    assert events[0] == {"type": "speaker_picked", "sender": "Test Character"}
+    assert events[1]["type"] == "reply"
+    assert events[1]["sender"] == "Test Character"
+    assert events[1]["content"] == "a reply"
+    assert events[1]["timestamp"]
+    assert events[2] == {"type": "round_done"}
 
 
 def test_process_one_item_broadcasts_error_on_failure(db, monkeypatch):
@@ -461,11 +469,12 @@ def test_process_one_item_runs_an_idle_turn(db, monkeypatch):
     while not subscriber.empty():
         events.append(subscriber.get_nowait())
 
-    assert events == [
-        {"type": "speaker_picked", "sender": "Test Character"},
-        {"type": "reply", "sender": "Test Character", "content": "spontaneous line"},
-        {"type": "round_done"},
-    ]
+    assert events[0] == {"type": "speaker_picked", "sender": "Test Character"}
+    assert events[1]["type"] == "reply"
+    assert events[1]["sender"] == "Test Character"
+    assert events[1]["content"] == "spontaneous line"
+    assert events[1]["timestamp"]
+    assert events[2] == {"type": "round_done"}
 
 
 def test_process_one_item_idle_turn_yields_nothing_when_nobody_speaks(db, monkeypatch):

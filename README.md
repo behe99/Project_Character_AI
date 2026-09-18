@@ -56,10 +56,11 @@ in one are visible in the other (and in `history.py`) since they all share
 `chatroom.db`.
 
 A few small usability touches: the send button is disabled until you've
-typed something; Escape closes whichever modal is open; and scrolling up
-to reread something doesn't get yanked back down by new replies arriving -
-it only auto-scrolls if you were already at the bottom, or when it's your
-own message being sent.
+typed something; Escape closes whichever modal is open; scrolling up to
+reread something doesn't get yanked back down by new replies arriving - it
+only auto-scrolls if you were already at the bottom, or when it's your own
+message being sent; and every message shows the time it was sent, so a
+conversation you step away from and come back to still reads clearly.
 
 Replies stream in one at a time as each character finishes "typing," instead
 of waiting for the whole round to land at once - and you're never locked out

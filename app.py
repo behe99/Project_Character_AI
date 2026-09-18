@@ -4,6 +4,7 @@ import random
 import re
 import sqlite3
 import threading
+from datetime import datetime
 
 from flask import Flask, jsonify, request, render_template, Response, stream_with_context
 
@@ -116,7 +117,14 @@ def _process_one_item(session_id, item):
         else:
             stream = main.run_idle_turn_stream(session_id, on_speaker_picked=on_speaker_picked)
         for name, reply in stream:
-            _broadcast(session_id, {"type": "reply", "sender": name, "content": reply})
+            # add_message() (inside generate_character_reply) already wrote
+            # this reply's own timestamp a moment ago - this is close enough
+            # for display purposes without threading a return value all the
+            # way back through main.py's stream generators.
+            _broadcast(session_id, {
+                "type": "reply", "sender": name, "content": reply,
+                "timestamp": datetime.now().isoformat(),
+            })
     except (RuntimeError, ValueError) as e:
         _broadcast(session_id, {"type": "error", "message": str(e)})
     _broadcast(session_id, {"type": "round_done"})
@@ -224,7 +232,10 @@ def _session_payload(session_id):
     characters = sorted(get_session_characters(session_id), key=lambda c: c["id"])
     return {
         "session_id": session_id,
-        "messages": [{"sender": m["sender"], "content": m["content"]} for m in messages],
+        "messages": [
+            {"sender": m["sender"], "content": m["content"], "timestamp": m["timestamp"]}
+            for m in messages
+        ],
         "characters": [c["name"] for c in characters],
     }
 

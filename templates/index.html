@@ -94,6 +94,7 @@
   }
   .msg { max-width: 80%; line-height: 1.4; }
   .msg .name { font-weight: 600; margin-right: 6px; }
+  .msg .timestamp { font-size: 11px; color: var(--muted); margin-top: 2px; }
   .msg.user { align-self: flex-end; text-align: right; color: var(--text); }
   .msg.user .bubble {
     background: var(--accent);
@@ -554,7 +555,13 @@ function isScrolledNearBottom() {
   return messagesEl.scrollHeight - messagesEl.scrollTop - messagesEl.clientHeight < 100;
 }
 
-function appendMessage(sender, content, kind) {
+function formatTimestamp(isoString) {
+  const date = new Date(isoString);
+  if (isNaN(date)) return "";
+  return date.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+}
+
+function appendMessage(sender, content, kind, timestamp) {
   // Checked before the new message is added, since appending changes
   // scrollHeight - otherwise this would always read as "near the bottom."
   // Your own messages always snap you back down; other arrivals only do
@@ -581,6 +588,12 @@ function appendMessage(sender, content, kind) {
   }
   bubble.appendChild(document.createTextNode(content));
   row.appendChild(bubble);
+  if (timestamp && kind !== "error") {
+    const timeEl = document.createElement("div");
+    timeEl.className = "timestamp";
+    timeEl.textContent = formatTimestamp(timestamp);
+    row.appendChild(timeEl);
+  }
   messagesEl.appendChild(row);
   if (shouldStickToBottom) {
     messagesEl.scrollTop = messagesEl.scrollHeight;
@@ -750,7 +763,7 @@ async function loadSession() {
   renderRosterBar(data.characters);
   messagesEl.innerHTML = "";
   data.messages.forEach(m => {
-    appendMessage(m.sender, m.content, m.sender === "user" ? "user" : "character");
+    appendMessage(m.sender, m.content, m.sender === "user" ? "user" : "character", m.timestamp);
   });
   connectStream(sessionId);
 }
@@ -774,7 +787,7 @@ function connectStream(sid) {
       typingName = event.sender;
       updateTypingIndicator();
     } else if (event.type === "reply") {
-      appendMessage(event.sender, event.content, "character");
+      appendMessage(event.sender, event.content, "character", event.timestamp);
       if (typingName === event.sender) typingName = null;
       updateTypingIndicator();
     } else if (event.type === "error") {
@@ -1024,7 +1037,7 @@ async function openConversation(id) {
     renderRosterBar(data.characters);
     messagesEl.innerHTML = "";
     data.messages.forEach(m => {
-      appendMessage(m.sender, m.content, m.sender === "user" ? "user" : "character");
+      appendMessage(m.sender, m.content, m.sender === "user" ? "user" : "character", m.timestamp);
     });
     connectStream(sessionId);
     closeConversationsModal();
@@ -1061,7 +1074,7 @@ async function sendMessage() {
   // can keep sending messages while characters are still answering earlier
   // ones - each is queued and processed in order, replies stream in one by
   // one over /api/stream as they're generated.
-  appendMessage(null, text, "user");
+  appendMessage(null, text, "user", new Date().toISOString());
   inputEl.value = "";
   updateSendButtonState();
 
