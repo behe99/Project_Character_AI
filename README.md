@@ -55,6 +55,12 @@ a "New Conversation" button. Uses the same database and the same
 in one are visible in the other (and in `history.py`) since they all share
 `chatroom.db`.
 
+A few small usability touches: the send button is disabled until you've
+typed something; Escape closes whichever modal is open; and scrolling up
+to reread something doesn't get yanked back down by new replies arriving -
+it only auto-scrolls if you were already at the bottom, or when it's your
+own message being sent.
+
 Replies stream in one at a time as each character finishes "typing," instead
 of waiting for the whole round to land at once - and you're never locked out
 of the input while that's happening. Send another message right away and

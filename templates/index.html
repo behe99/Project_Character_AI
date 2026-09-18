@@ -528,7 +528,18 @@ function groupByShow(chars) {
   return shows.map(show => ({ show, chars: groups[show] }));
 }
 
+function isScrolledNearBottom() {
+  return messagesEl.scrollHeight - messagesEl.scrollTop - messagesEl.clientHeight < 100;
+}
+
 function appendMessage(sender, content, kind, messageId) {
+  // Checked before the new message is added, since appending changes
+  // scrollHeight - otherwise this would always read as "near the bottom."
+  // Your own messages always snap you back down; other arrivals only do
+  // if you were already there, so scrolling up to reread something isn't
+  // constantly interrupted by new replies streaming in.
+  const shouldStickToBottom = kind === "user" || isScrolledNearBottom();
+
   const row = document.createElement("div");
   row.className = "msg " + kind;
   if (messageId != null) row.dataset.messageId = messageId;
@@ -571,7 +582,9 @@ function appendMessage(sender, content, kind, messageId) {
 
   row.appendChild(bubble);
   messagesEl.appendChild(row);
-  messagesEl.scrollTop = messagesEl.scrollHeight;
+  if (shouldStickToBottom) {
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+  }
   return row;
 }
 
@@ -926,19 +939,28 @@ async function startNewSession() {
     .map(cb => cb.value);
   const name = newSessionNameEl.value.trim();
 
-  const res = await fetch("/api/session/new", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ characters: selected, name }),
-  });
-  const data = await res.json();
+  try {
+    const res = await fetch("/api/session/new", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ characters: selected, name }),
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      alert(data.error || "Could not start that conversation.");
+      return;
+    }
+    const data = await res.json();
 
-  sessionId = data.session_id;
-  renderRosterBar(selected.length ? selected : characters.map(c => c.name));
-  messagesEl.innerHTML = "";
-  connectStream(sessionId);
-  closeNewSessionModal();
-  inputEl.focus();
+    sessionId = data.session_id;
+    renderRosterBar(selected.length ? selected : characters.map(c => c.name));
+    messagesEl.innerHTML = "";
+    connectStream(sessionId);
+    closeNewSessionModal();
+    inputEl.focus();
+  } catch (e) {
+    alert("Could not reach the server.");
+  }
 }
 
 async function openConversationsModal() {
@@ -1071,18 +1093,26 @@ async function openConversation(id) {
     closeConversationsModal();
     return;
   }
-  const res = await fetch(`/api/session/${id}`);
-  const data = await res.json();
+  try {
+    const res = await fetch(`/api/session/${id}`);
+    if (!res.ok) {
+      alert("Could not open that conversation.");
+      return;
+    }
+    const data = await res.json();
 
-  sessionId = data.session_id;
-  renderRosterBar(data.characters);
-  messagesEl.innerHTML = "";
-  data.messages.forEach(m => {
-    appendMessage(m.sender, m.content, m.sender === "user" ? "user" : "character", m.id);
-  });
-  connectStream(sessionId);
-  closeConversationsModal();
-  inputEl.focus();
+    sessionId = data.session_id;
+    renderRosterBar(data.characters);
+    messagesEl.innerHTML = "";
+    data.messages.forEach(m => {
+      appendMessage(m.sender, m.content, m.sender === "user" ? "user" : "character", m.id);
+    });
+    connectStream(sessionId);
+    closeConversationsModal();
+    inputEl.focus();
+  } catch (e) {
+    alert("Could not reach the server.");
+  }
 }
 
 async function deleteConversation(id) {
@@ -1113,6 +1143,7 @@ async function sendMessage() {
   const row = appendMessage(null, text, "user");
   pendingUserRows.push(row);
   inputEl.value = "";
+  updateSendButtonState();
 
   try {
     const res = await fetch("/api/message", {
@@ -1136,10 +1167,16 @@ function forgetPendingRow(row) {
   if (index !== -1) pendingUserRows.splice(index, 1);
 }
 
+function updateSendButtonState() {
+  sendBtn.disabled = inputEl.value.trim().length === 0;
+}
+
 sendBtn.addEventListener("click", sendMessage);
 inputEl.addEventListener("keydown", e => {
   if (e.key === "Enter") sendMessage();
 });
+inputEl.addEventListener("input", updateSendButtonState);
+updateSendButtonState();
 newSessionBtn.addEventListener("click", openNewSessionModal);
 newSessionCloseBtn.addEventListener("click", closeNewSessionModal);
 newSessionOverlay.addEventListener("click", e => {
@@ -1149,6 +1186,15 @@ conversationsBtn.addEventListener("click", openConversationsModal);
 conversationsCloseBtn.addEventListener("click", closeConversationsModal);
 conversationsOverlay.addEventListener("click", e => {
   if (e.target === conversationsOverlay) closeConversationsModal();
+});
+document.addEventListener("keydown", e => {
+  if (e.key !== "Escape") return;
+  if (newSessionOverlay.classList.contains("open")) closeNewSessionModal();
+  if (manageOverlay.classList.contains("open")) closeManageModal();
+  if (conversationsOverlay.classList.contains("open")) closeConversationsModal();
+});
+newSessionNameEl.addEventListener("keydown", e => {
+  if (e.key === "Enter") startNewSession();
 });
 pickAllBtn.addEventListener("click", () => {
   pickListEl.querySelectorAll(".pick-checkbox").forEach(cb => cb.checked = true);
@@ -1171,9 +1217,16 @@ charSearchEl.addEventListener("input", () => {
 });
 
 (async function init() {
-  await loadCharacters();
-  await loadSession();
-  inputEl.focus();
+  try {
+    await loadCharacters();
+    await loadSession();
+    inputEl.focus();
+  } catch (e) {
+    messagesEl.innerHTML =
+      '<p style="color:var(--muted); padding:20px; text-align:center;">' +
+      "Could not load the chatroom. Is the server running? Try refreshing the page." +
+      "</p>";
+  }
 })();
 </script>
 </body>
