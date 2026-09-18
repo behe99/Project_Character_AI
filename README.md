@@ -108,6 +108,10 @@ Both modals also have a search box above the list - type a character's
 name or a show's name (e.g. "vikings") to instantly narrow it down, useful
 once you're adding your own characters on top of the seeded 45.
 
+Click the "Light"/"Dark" button in the header to switch themes. Your choice
+is remembered (via the browser's local storage) so it's still there next
+time you open the page - it defaults to dark until you switch.
+
 ## Managing conversations
 
 Click "Conversations" to see every conversation you've had, newest first -

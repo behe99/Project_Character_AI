@@ -3,6 +3,17 @@
 <head>
 <meta charset="UTF-8">
 <title>Character AI Chatroom</title>
+<script>
+  // Runs before the stylesheet paints anything, so the page never flashes
+  // dark before switching to a saved light preference.
+  (function () {
+    try {
+      if (localStorage.getItem("chatroom-theme") === "light") {
+        document.documentElement.setAttribute("data-theme", "light");
+      }
+    } catch (e) {}
+  })();
+</script>
 <style>
   :root {
     --bg: #1e1f26;
@@ -11,6 +22,14 @@
     --text: #e8e8ec;
     --muted: #8b8d9b;
     --accent: #5b8dff;
+  }
+  :root[data-theme="light"] {
+    --bg: #f4f5f8;
+    --panel: #ffffff;
+    --border: #dbdee6;
+    --text: #21222b;
+    --muted: #6b6d7d;
+    --accent: #3f6fe0;
   }
   * { box-sizing: border-box; }
   body {
@@ -135,6 +154,16 @@
     font-size: 13px;
   }
   #manage-btn:hover { border-color: var(--accent); }
+  #theme-toggle-btn {
+    background: transparent;
+    color: var(--text);
+    border: 1px solid var(--border);
+    padding: 8px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+  }
+  #theme-toggle-btn:hover { border-color: var(--accent); }
   .modal-overlay {
     position: fixed;
     inset: 0;
@@ -311,6 +340,7 @@
   <header>
     <h1>Character AI Chatroom</h1>
     <div class="header-actions">
+      <button id="theme-toggle-btn">🌙 Dark</button>
       <button id="manage-btn">Manage Characters</button>
       <button id="conversations-btn">Conversations</button>
       <button id="new-session-btn">New Conversation</button>
@@ -459,6 +489,33 @@ const conversationsBtn = document.getElementById("conversations-btn");
 const conversationsOverlay = document.getElementById("conversations-overlay");
 const conversationsCloseBtn = document.getElementById("conversations-close-btn");
 const conversationsListEl = document.getElementById("conversations-list");
+const themeToggleBtn = document.getElementById("theme-toggle-btn");
+
+const THEME_KEY = "chatroom-theme";
+
+function applyTheme(theme) {
+  document.documentElement.setAttribute("data-theme", theme);
+  themeToggleBtn.textContent = theme === "light" ? "🌙 Dark" : "☀️ Light";
+}
+
+function initTheme() {
+  let saved = "dark";
+  try {
+    saved = localStorage.getItem(THEME_KEY) === "light" ? "light" : "dark";
+  } catch (e) {}
+  applyTheme(saved);
+}
+
+themeToggleBtn.addEventListener("click", () => {
+  const isLight = document.documentElement.getAttribute("data-theme") === "light";
+  const next = isLight ? "dark" : "light";
+  try {
+    localStorage.setItem(THEME_KEY, next);
+  } catch (e) {}
+  applyTheme(next);
+});
+
+initTheme();
 
 const SHOW_ORDER = ["Game of Thrones", "Vikings", "The Walking Dead"];
 
