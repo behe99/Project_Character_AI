@@ -91,12 +91,14 @@ Click "Manage Characters" to add a new character (same fields as
 browser - no separate script needed.
 
 Both "Manage Characters" and the "New Conversation" picker group characters
-by show instead of one long list - so with 45+ characters you can jump
-straight to "Vikings" or "The Walking Dead" instead of scanning everything.
-Each group in the picker has its own "all"/"none" links alongside the
-global "Select all"/"Select none". When adding a character, fill in the
-"Show/universe" field with an existing show's name to group them with it,
-or type a new one (leave it blank and they land under "Custom").
+by show instead of one long list, and each show is collapsed by default -
+you see just the show names (e.g. "▸ Vikings (15)") and click one to expand
+just that cast, instead of scrolling past all 45+ characters to find who
+you want. Each group in the picker has its own "all"/"none" links alongside
+the global "Select all"/"Select none" - clicking those doesn't expand or
+collapse the group. When adding a character, fill in the "Show/universe"
+field with an existing show's name to group them with it, or type a new
+one (leave it blank and they land under "Custom").
 
 Every character gets a small emoji avatar - shown in the roster bar, the
 character lists, the picker, and next to their name in chat - instead of
@@ -107,7 +109,9 @@ leave it blank and they'll just show their first initial instead.
 
 Both modals also have a search box above the list - type a character's
 name or a show's name (e.g. "vikings") to instantly narrow it down, useful
-once you're adding your own characters on top of the seeded 45.
+once you're adding your own characters on top of the seeded 45. Searching
+auto-expands any collapsed show that has a match, and collapses back to
+however you had it once you clear the search.
 
 Click the "Light"/"Dark" button in the header to switch themes. Your choice
 is remembered (via the browser's local storage) so it's still there next

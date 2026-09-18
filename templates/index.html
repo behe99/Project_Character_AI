@@ -464,6 +464,8 @@
     margin: 14px 0 4px;
     padding-bottom: 4px;
     border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    user-select: none;
   }
   .group-header:first-child { margin-top: 0; }
   .group-header .group-title {
@@ -472,6 +474,24 @@
     text-transform: uppercase;
     letter-spacing: 0.03em;
     color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .group-chevron {
+    display: inline-block;
+    font-size: 10px;
+    transition: transform 0.15s ease;
+  }
+  .char-group.collapsed .group-chevron, .pick-group.collapsed .group-chevron {
+    transform: rotate(-90deg);
+  }
+  #char-list:not(.searching) .char-group.collapsed .char-row,
+  #pick-list:not(.searching) .pick-group.collapsed .pick-row {
+    display: none;
+  }
+  #char-list.searching .group-chevron, #pick-list.searching .group-chevron {
+    transform: rotate(0deg);
   }
   .group-header .group-actions { display: flex; gap: 8px; }
   #start-session-btn {
@@ -860,12 +880,13 @@ function renderCharList() {
   }
   groupByShow(characters).forEach(({ show, chars }) => {
     const group = document.createElement("div");
-    group.className = "char-group";
+    group.className = "char-group collapsed";
     group.dataset.show = show;
 
     const header = document.createElement("div");
     header.className = "group-header";
-    header.innerHTML = `<span class="group-title">${show} (${chars.length})</span>`;
+    header.innerHTML = `<span class="group-title"><span class="group-chevron">▾</span>${show} (${chars.length})</span>`;
+    header.addEventListener("click", () => group.classList.toggle("collapsed"));
     group.appendChild(header);
 
     chars.forEach(c => {
@@ -890,6 +911,10 @@ function renderCharList() {
 
 function filterGroups(container, query, emptyEl, emptyQueryEl, rowSelector) {
   const q = query.trim().toLowerCase();
+  // While actively searching, collapsed sections stop hiding their rows
+  // (see the #char-list:not(.searching)/#pick-list:not(.searching) CSS
+  // rules) so a match inside a collapsed show still shows up.
+  container.classList.toggle("searching", q.length > 0);
   let anyVisible = false;
   container.querySelectorAll(".char-group, .pick-group").forEach(group => {
     const showMatches = group.dataset.show.toLowerCase().includes(q);
@@ -1041,19 +1066,23 @@ function renderPickList() {
   pickListEl.innerHTML = "";
   groupByShow(characters).forEach(({ show, chars }) => {
     const group = document.createElement("div");
-    group.className = "pick-group";
+    group.className = "pick-group collapsed";
     group.dataset.show = show;
 
     const header = document.createElement("div");
     header.className = "group-header";
     const safeShow = show.replace(/"/g, "&quot;");
     header.innerHTML = `
-      <span class="group-title">${show} (${chars.length})</span>
+      <span class="group-title"><span class="group-chevron">▾</span>${show} (${chars.length})</span>
       <span class="group-actions">
         <button type="button" class="link-btn group-all-btn" data-show="${safeShow}">all</button>
         <button type="button" class="link-btn group-none-btn" data-show="${safeShow}">none</button>
       </span>
     `;
+    header.addEventListener("click", e => {
+      if (e.target.closest("button")) return;
+      group.classList.toggle("collapsed");
+    });
     group.appendChild(header);
 
     chars.forEach(c => {
