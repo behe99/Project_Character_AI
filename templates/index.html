@@ -165,6 +165,54 @@
     font-size: 13px;
   }
   #theme-toggle-btn:hover { border-color: var(--accent); }
+  #chat-search-toggle-btn {
+    background: transparent;
+    color: var(--text);
+    border: 1px solid var(--border);
+    padding: 8px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+  }
+  #chat-search-toggle-btn:hover { border-color: var(--accent); }
+  .chat-search-bar {
+    display: none;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 20px;
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+  }
+  .chat-search-bar.open { display: flex; }
+  #chat-search-input {
+    flex: 1;
+    padding: 6px 10px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text);
+    font-size: 13px;
+  }
+  #chat-search-input:focus { outline: 1px solid var(--accent); }
+  .chat-search-count {
+    font-size: 12px;
+    color: var(--muted);
+    white-space: nowrap;
+    min-width: 60px;
+    text-align: center;
+  }
+  .chat-search-bar button {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    border-radius: 5px;
+    padding: 4px 9px;
+    cursor: pointer;
+    font-size: 13px;
+  }
+  .chat-search-bar button:hover { border-color: var(--accent); color: var(--text); }
+  .msg.search-match .bubble { box-shadow: 0 0 0 2px var(--accent); }
+  .msg.search-current .bubble { box-shadow: 0 0 0 2px #e0b04a; }
   .modal-overlay {
     position: fixed;
     inset: 0;
@@ -342,6 +390,7 @@
   <header>
     <h1>Character AI Chatroom</h1>
     <div class="header-actions">
+      <button id="chat-search-toggle-btn" title="Search this conversation">🔍 Search</button>
       <button id="theme-toggle-btn">🌙 Dark</button>
       <button id="manage-btn">Manage Characters</button>
       <button id="conversations-btn">Conversations</button>
@@ -349,6 +398,13 @@
     </div>
   </header>
   <div id="roster"></div>
+  <div class="chat-search-bar" id="chat-search-bar">
+    <input type="text" id="chat-search-input" placeholder="Search this conversation...">
+    <span class="chat-search-count" id="chat-search-count"></span>
+    <button type="button" id="chat-search-prev-btn" title="Previous match">↑</button>
+    <button type="button" id="chat-search-next-btn" title="Next match">↓</button>
+    <button type="button" id="chat-search-close-btn" title="Close search">&times;</button>
+  </div>
   <div id="messages"></div>
   <div id="typing"></div>
   <div id="input-bar">
@@ -492,6 +548,13 @@ const conversationsOverlay = document.getElementById("conversations-overlay");
 const conversationsCloseBtn = document.getElementById("conversations-close-btn");
 const conversationsListEl = document.getElementById("conversations-list");
 const themeToggleBtn = document.getElementById("theme-toggle-btn");
+const chatSearchToggleBtn = document.getElementById("chat-search-toggle-btn");
+const chatSearchBar = document.getElementById("chat-search-bar");
+const chatSearchInput = document.getElementById("chat-search-input");
+const chatSearchCountEl = document.getElementById("chat-search-count");
+const chatSearchPrevBtn = document.getElementById("chat-search-prev-btn");
+const chatSearchNextBtn = document.getElementById("chat-search-next-btn");
+const chatSearchCloseBtn = document.getElementById("chat-search-close-btn");
 
 const THEME_KEY = "chatroom-theme";
 
@@ -553,6 +616,66 @@ function groupByShow(chars) {
 
 function isScrolledNearBottom() {
   return messagesEl.scrollHeight - messagesEl.scrollTop - messagesEl.clientHeight < 100;
+}
+
+let searchMatches = [];
+let currentMatchIndex = -1;
+
+function updateSearchCount() {
+  if (!chatSearchInput.value.trim()) {
+    chatSearchCountEl.textContent = "";
+  } else if (searchMatches.length === 0) {
+    chatSearchCountEl.textContent = "No matches";
+  } else {
+    chatSearchCountEl.textContent = `${currentMatchIndex + 1}/${searchMatches.length}`;
+  }
+}
+
+function goToMatch(index) {
+  if (searchMatches.length === 0) return;
+  const previous = searchMatches[currentMatchIndex];
+  if (previous) previous.classList.remove("search-current");
+  currentMatchIndex = ((index % searchMatches.length) + searchMatches.length) % searchMatches.length;
+  const row = searchMatches[currentMatchIndex];
+  row.classList.add("search-current");
+  row.scrollIntoView({ behavior: "smooth", block: "center" });
+  updateSearchCount();
+}
+
+function runChatSearch(rawQuery) {
+  const query = rawQuery.trim().toLowerCase();
+  const rows = Array.from(messagesEl.querySelectorAll(".msg"));
+  rows.forEach(row => row.classList.remove("search-match", "search-current"));
+  searchMatches = [];
+  currentMatchIndex = -1;
+
+  if (query) {
+    rows.forEach(row => {
+      const bubble = row.querySelector(".bubble");
+      if (bubble && bubble.textContent.toLowerCase().includes(query)) {
+        row.classList.add("search-match");
+        searchMatches.push(row);
+      }
+    });
+    if (searchMatches.length > 0) goToMatch(0);
+  }
+  updateSearchCount();
+}
+
+function openChatSearch() {
+  chatSearchBar.classList.add("open");
+  chatSearchInput.value = "";
+  chatSearchCountEl.textContent = "";
+  chatSearchInput.focus();
+}
+
+function closeChatSearch() {
+  chatSearchBar.classList.remove("open");
+  messagesEl.querySelectorAll(".msg").forEach(row => {
+    row.classList.remove("search-match", "search-current");
+  });
+  searchMatches = [];
+  currentMatchIndex = -1;
 }
 
 function formatTimestamp(isoString) {
@@ -761,6 +884,7 @@ async function loadSession() {
   const data = await res.json();
   sessionId = data.session_id;
   renderRosterBar(data.characters);
+  closeChatSearch();
   messagesEl.innerHTML = "";
   data.messages.forEach(m => {
     appendMessage(m.sender, m.content, m.sender === "user" ? "user" : "character", m.timestamp);
@@ -880,6 +1004,7 @@ async function startNewSession() {
 
     sessionId = data.session_id;
     renderRosterBar(selected.length ? selected : characters.map(c => c.name));
+    closeChatSearch();
     messagesEl.innerHTML = "";
     connectStream(sessionId);
     closeNewSessionModal();
@@ -1035,6 +1160,7 @@ async function openConversation(id) {
 
     sessionId = data.session_id;
     renderRosterBar(data.characters);
+    closeChatSearch();
     messagesEl.innerHTML = "";
     data.messages.forEach(m => {
       appendMessage(m.sender, m.content, m.sender === "user" ? "user" : "character", m.timestamp);
@@ -1118,7 +1244,22 @@ document.addEventListener("keydown", e => {
   if (newSessionOverlay.classList.contains("open")) closeNewSessionModal();
   if (manageOverlay.classList.contains("open")) closeManageModal();
   if (conversationsOverlay.classList.contains("open")) closeConversationsModal();
+  if (chatSearchBar.classList.contains("open")) closeChatSearch();
 });
+chatSearchToggleBtn.addEventListener("click", () => {
+  if (chatSearchBar.classList.contains("open")) closeChatSearch();
+  else openChatSearch();
+});
+chatSearchCloseBtn.addEventListener("click", closeChatSearch);
+chatSearchInput.addEventListener("input", () => runChatSearch(chatSearchInput.value));
+chatSearchInput.addEventListener("keydown", e => {
+  if (e.key === "Enter") {
+    e.preventDefault();
+    goToMatch(currentMatchIndex + (e.shiftKey ? -1 : 1));
+  }
+});
+chatSearchPrevBtn.addEventListener("click", () => goToMatch(currentMatchIndex - 1));
+chatSearchNextBtn.addEventListener("click", () => goToMatch(currentMatchIndex + 1));
 newSessionNameEl.addEventListener("keydown", e => {
   if (e.key === "Enter") startNewSession();
 });

@@ -113,6 +113,11 @@ Click the "Light"/"Dark" button in the header to switch themes. Your choice
 is remembered (via the browser's local storage) so it's still there next
 time you open the page - it defaults to dark until you switch.
 
+Click "🔍 Search" to search the current conversation - matching messages
+get outlined, the count shows your position (e.g. "2/5"), and pressing
+Enter (or the ↑/↓ buttons) jumps between them, scrolling each into view.
+Escape or the × closes it.
+
 ## Managing conversations
 
 Click "Conversations" to see every conversation you've had, newest first -
