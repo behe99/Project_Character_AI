@@ -6,6 +6,10 @@ Game of Thrones, Vikings, The Walking Dead, La Casa de Papel (Money Heist),
 Squid Game, Breaking Bad, Prison Break, Friends, The Simpsons, The Office,
 and Stranger Things.
 
+![A group chat with Tyrion Lannister, Ragnar Lothbrok, Walter White, Michael Scott, and Eleven all replying to the same message](screenshots/chat.png)
+
+![The New Conversation picker, showing all eleven shows as collapsible sections with Breaking Bad expanded](screenshots/character_picker.png)
+
 - `database.py` — SQLite persistence for characters, sessions, and messages.
 - `router.py` — decides which character(s), if any, should respond to the latest message.
 - `character_response.py` — generates an in-character reply for a chosen speaker.
