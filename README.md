@@ -6,9 +6,15 @@ Game of Thrones, Vikings, The Walking Dead, La Casa de Papel (Money Heist),
 Squid Game, Breaking Bad, Prison Break, Friends, The Simpsons, The Office,
 and Stranger Things.
 
-![A group chat with Tyrion Lannister, Ragnar Lothbrok, Walter White, Michael Scott, and Eleven all replying to the same message](screenshots/chat.png)
+![Tyrion Lannister, Michael Scott, Walter White, and Eleven each answering the same two questions in their own distinct voice](screenshots/chat.png)
+
+*Four characters from four different shows, each staying completely in character - Tyrion reaches for wine, Walter talks chemistry, Michael tries to throw a party, and Eleven just wants Eggos.*
 
 ![The New Conversation picker, showing all eleven shows as collapsible sections with Breaking Bad expanded](screenshots/character_picker.png)
+
+![Searching a conversation for "day" - five matching messages outlined, with a match counter and next/previous navigation](screenshots/search.png)
+
+![The same conversation in light theme](screenshots/light_theme.png)
 
 - `database.py` — SQLite persistence for characters, sessions, and messages.
 - `router.py` — decides which character(s), if any, should respond to the latest message.
