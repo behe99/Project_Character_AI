@@ -6,19 +6,19 @@ Game of Thrones, Vikings, The Walking Dead, La Casa de Papel (Money Heist),
 Squid Game, Breaking Bad, Prison Break, Friends, The Simpsons, The Office,
 and Stranger Things.
 
-![Michael Scott, Walter White, Tyrion Lannister, and Ragnar Lothbrok arguing with each other about the best way to win an argument, each responding directly to the previous speaker](screenshots/chat.png)
+![Michael Scott, Walter White, and Tyrion Lannister replying to each other about needing a vacation, while Ragnar Lothbrok stays quiet](screenshots/chat.png)
 
-*Four characters from four different shows, replying to each other, not just to you - Michael's HR-manager instinct, Walter's cold pragmatism, Tyrion calling out "both of you," and Ragnar dismissing the whole conversation, all in one exchange.*
+*Michael, Walter, and Tyrion riff off each other directly - "That's not a vacation, Michael," "Try to keep up, Walter" - while Ragnar, also in the room, doesn't chime in this time.*
 
-![The same conversation with Michael Scott spontaneously breaking the silence after nobody said anything for a while](screenshots/idle_chatter.png)
+![Ragnar Lothbrok and Tyrion Lannister talking about the perfect meal, while Michael Scott and Walter White stay quiet](screenshots/chat2.png)
 
-*Leave a conversation open and idle for a while, and a character may occasionally speak up unprompted - no new message from you needed.*
+*A different conversation, a different pair talking - not everyone in the room responds to everything, and it's not always the same ones.*
 
 ![The New Conversation picker, showing all eleven shows as collapsible sections with Breaking Bad expanded](screenshots/character_picker.png)
 
 ![The Manage Characters modal with Vikings expanded, showing Remove buttons next to each character](screenshots/manage_characters.png)
 
-![Searching the conversation for "argument" - four matching messages outlined, with a match counter and next/previous navigation](screenshots/search.png)
+![Searching the conversation for "vacation" - three matching messages outlined, with a match counter and next/previous navigation](screenshots/search.png)
 
 ![The same conversation in light theme](screenshots/light_theme.png)
 
