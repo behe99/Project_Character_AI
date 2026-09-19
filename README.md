@@ -6,13 +6,19 @@ Game of Thrones, Vikings, The Walking Dead, La Casa de Papel (Money Heist),
 Squid Game, Breaking Bad, Prison Break, Friends, The Simpsons, The Office,
 and Stranger Things.
 
-![Tyrion Lannister, Michael Scott, Walter White, and Eleven each answering the same two questions in their own distinct voice](screenshots/chat.png)
+![Michael Scott, Walter White, Tyrion Lannister, and Ragnar Lothbrok arguing with each other about the best way to win an argument, each responding directly to the previous speaker](screenshots/chat.png)
 
-*Four characters from four different shows, each staying completely in character - Tyrion reaches for wine, Walter talks chemistry, Michael tries to throw a party, and Eleven just wants Eggos.*
+*Four characters from four different shows, replying to each other, not just to you - Michael's HR-manager instinct, Walter's cold pragmatism, Tyrion calling out "both of you," and Ragnar dismissing the whole conversation, all in one exchange.*
+
+![The same conversation with Michael Scott spontaneously breaking the silence after nobody said anything for a while](screenshots/idle_chatter.png)
+
+*Leave a conversation open and idle for a while, and a character may occasionally speak up unprompted - no new message from you needed.*
 
 ![The New Conversation picker, showing all eleven shows as collapsible sections with Breaking Bad expanded](screenshots/character_picker.png)
 
-![Searching a conversation for "day" - five matching messages outlined, with a match counter and next/previous navigation](screenshots/search.png)
+![The Manage Characters modal with Vikings expanded, showing Remove buttons next to each character](screenshots/manage_characters.png)
+
+![Searching the conversation for "argument" - four matching messages outlined, with a match counter and next/previous navigation](screenshots/search.png)
 
 ![The same conversation in light theme](screenshots/light_theme.png)
 
