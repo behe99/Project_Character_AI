@@ -7,7 +7,7 @@ from google.genai import types
 load_dotenv()
 client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
 
-MODEL = "gemini-2.5-flash-lite"
+MODEL = "gemini-3.5-flash-lite"
 
 # We never use tool/function calling, so disable automatic function calling
 # to silence the SDK's AFC warning on every call.
