@@ -167,18 +167,31 @@ def test_api_session_creates_one_when_none_exists(db):
     assert db.get_all_sessions()[0]["id"] == data["session_id"]
 
 
-def test_api_session_returns_existing_messages(db):
+def test_api_session_starts_fresh_when_the_last_one_has_messages(db):
+    """Opening the app shouldn't resume a conversation you were already
+    mid-way through - it should only reuse the last session if that one is
+    itself still empty (see test_api_session_reuses_an_empty_last_session)."""
     session_id = db.create_session("Chat Session")
     db.add_message(session_id, "user", "hi")
     client = client_for(db)
 
     res = client.get("/api/session")
     data = res.get_json()
+    assert data["session_id"] != session_id
+    assert data["messages"] == []
+
+
+def test_api_session_reuses_an_empty_last_session(db):
+    """Refreshing the page repeatedly shouldn't pile up empty "Chat Session"
+    rows - if the last session has no messages yet, reuse it instead of
+    creating another blank one."""
+    session_id = db.create_session("Chat Session")
+    client = client_for(db)
+
+    res = client.get("/api/session")
+    data = res.get_json()
     assert data["session_id"] == session_id
-    assert len(data["messages"]) == 1
-    assert data["messages"][0]["sender"] == "user"
-    assert data["messages"][0]["content"] == "hi"
-    assert data["messages"][0]["timestamp"]
+    assert data["messages"] == []
 
 
 def test_api_new_session_creates_another_session(db):
