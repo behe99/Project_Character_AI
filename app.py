@@ -159,8 +159,13 @@ def ensure_ready():
 
 
 def get_or_create_session_id():
+    """Opening the app always lands on a blank conversation rather than
+    resuming whatever you were last chatting about - except it reuses the
+    last session instead of creating a new one if that session is itself
+    still empty (nobody's sent a message in it yet), so refreshing the page
+    repeatedly doesn't pile up empty "Chat Session" rows."""
     last_session = get_last_session()
-    if last_session is not None:
+    if last_session is not None and not get_messages(last_session["id"]):
         return last_session["id"]
     return create_session("Chat Session")
 
