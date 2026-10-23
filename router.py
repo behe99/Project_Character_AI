@@ -197,13 +197,3 @@ Respond with ONLY valid JSON in this exact format, no other text:
         return None
 
     return speaker
-
-
-if __name__ == "__main__":
-    from database import create_session, add_message
-
-    session_id = create_session("Test Session")
-    add_message(session_id, "user", "I think power should always come with sacrifice.")
-
-    speakers = decide_speakers(session_id, "I think power should always come with sacrifice.")
-    print("Router decided these characters should respond:", speakers)
