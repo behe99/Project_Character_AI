@@ -164,18 +164,3 @@ def generate_replies_for_speakers(session_id, speaker_names):
         replies.append((name, reply))
         print(f"{name}: {reply}")
     return replies
-
-
-if __name__ == "__main__":
-    from database import create_session, add_message as add_msg
-    from router import decide_speakers
-
-    session_id = create_session("Test Session 2")
-    user_message = "I think power should always come with sacrifice."
-    add_msg(session_id, "user", user_message)
-
-    speakers = decide_speakers(session_id, user_message)
-    print("Router decided these characters should respond:", speakers)
-    print()
-
-    generate_replies_for_speakers(session_id, speakers)
